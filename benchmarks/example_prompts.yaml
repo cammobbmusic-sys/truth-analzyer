@@ -1,0 +1,10 @@
+# example_prompts.yaml
+# Minimal examples to drive benchmarking.
+# You may extend prompts per-agent role.
+verify_prompt: |
+  Please list the top 3 factual claims in the following text and rate their confidence.
+
+  Text: "The Eiffel Tower is in Paris and was completed in 1889."
+
+brainstorm_prompt: |
+  Provide 6 diverse, short ideas (one per line) for addressing climate-related misinformation.
