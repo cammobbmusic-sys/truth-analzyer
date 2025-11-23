@@ -14,17 +14,19 @@ class Orchestrator:
 
 
 
-    def __init__(self, agent_configs: list = None):
+    def __init__(self, agent_configs: list = None, dry_run=True):
 
         self.agent_configs = agent_configs or []
 
         self.agents = []
 
-        for cfg in self.agent_configs:
+        if not dry_run:
 
-            if cfg is not None:
+            for cfg in self.agent_configs:
 
-                self.agents.append(create_agent(cfg))
+                if cfg is not None:
+
+                    self.agents.append(create_agent(cfg))
 
 
 
@@ -34,9 +36,15 @@ class Orchestrator:
 
         Run all agents with the given prompt (simulated responses for safety)
 
+        Returns empty dict if no agents are instantiated (dry_run mode)
+
         '''
 
         results = {}
+
+        if not self.agents:
+
+            return results  # Dry run mode - no agents instantiated
 
         for agent in self.agents:
 
