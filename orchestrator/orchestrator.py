@@ -14,15 +14,17 @@ class Orchestrator:
 
 
 
-    def __init__(self, agent_configs: list):
+    def __init__(self, agent_configs: list = None):
 
-        # List of agent configs (dicts)
+        self.agent_configs = agent_configs or []
 
-        self.agent_configs = agent_configs
+        self.agents = []
 
-        # Instantiate agents dynamically
+        for cfg in self.agent_configs:
 
-        self.agents = [create_agent(cfg) for cfg in agent_configs]
+            if cfg is not None:
+
+                self.agents.append(create_agent(cfg))
 
 
 
