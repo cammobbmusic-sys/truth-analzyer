@@ -141,16 +141,28 @@ class Config:
         }
 
     def get_active_models(self) -> List[ModelConfig]:
-        """Get all configured models."""
-        return self.models
+        """Get all configured models with safe attribute access."""
+        models = getattr(self, "models", [])
+        return models
+
+    def get_models_safe(self) -> List[ModelConfig]:
+        """Safely get models list with defensive programming pattern."""
+        models = getattr(self, "models", [])
+        return models
 
     def validate_config(self) -> List[str]:
-        """Validate configuration and return any issues."""
+        """Validate configuration and return any issues with safe attribute access."""
         issues = []
-        if len(self.models) < self.verification.min_models:
-            issues.append(f"Insufficient models: {len(self.models)} < {self.verification.min_models}")
-        if not 0.5 <= self.verification.consensus_threshold <= 1.0:
-            issues.append("Consensus threshold must be between 0.5 and 1.0")
+        models = self.get_models_safe()
+        verification = getattr(self, "verification", None)
+
+        if len(models) < getattr(verification, "min_models", 3):
+            issues.append(f"Insufficient models: {len(models)} < {getattr(verification, 'min_models', 3)}")
+
+        if verification and hasattr(verification, "consensus_threshold"):
+            threshold = getattr(verification, "consensus_threshold", 0.8)
+            if not 0.5 <= threshold <= 1.0:
+                issues.append("Consensus threshold must be between 0.5 and 1.0")
         return issues
 
 
