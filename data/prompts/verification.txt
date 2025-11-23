@@ -1,0 +1,9 @@
+You are a {role} analyzing the following question.
+
+Question: {context}
+
+Please provide:
+1. Your direct answer
+2. Explanation with evidence
+3. Confidence level (0-1)
+4. Key assumptions made

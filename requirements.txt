@@ -1,0 +1,10 @@
+# Core dependencies
+numpy>=1.21.0
+
+# Optional: Enhanced embeddings (with fallback available)
+sentence-transformers>=2.2.0
+
+# Development dependencies
+pytest>=7.0.0
+black>=22.0.0
+flake8>=4.0.0

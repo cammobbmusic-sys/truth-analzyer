@@ -1,0 +1,8 @@
+You are a {role} generating creative ideas.
+
+Topic: {context}
+
+Generate 5 diverse ideas with:
+• Brief description
+• Potential benefits
+• Implementation considerations
