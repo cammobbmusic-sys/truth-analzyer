@@ -2,29 +2,9 @@
 # Configuration for agent benchmarking and orchestration
 
 agents:
-  - name: "gemini-3-pro"
-    provider: "google"
-    model: "gemini-3-pro"
-    role: "expert"
-    timeout: 15
-    temperature: 0.3
-    max_tokens: 3000
-
-  - name: "gpt-5.1-codex"
-    provider: "openai"
-    model: "gpt-5.1-codex"
-    role: "creative"
-    timeout: 15
-    temperature: 0.7
-    max_tokens: 3000
-
-  - name: "sonnet-4.5"
-    provider: "anthropic"
-    model: "sonnet-4.5"
-    role: "analyst"
-    timeout: 15
-    temperature: 0.5
-    max_tokens: 3000
+  - name: test-agent
+    provider: generic
+    model: "test-model"
 
 # Benchmarking settings
 benchmarking:
