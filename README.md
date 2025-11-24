@@ -116,12 +116,12 @@ The system supports multiple AI providers through a modular adapter architecture
 - **groq**: Groq API with free tier - fast inference, Llama models
   - Set `GROQ_API_KEY` environment variable
   - Example: `{"name": "groq-agent", "provider": "groq", "model": "llama-3.1-8b-instant"}`
+- **together**: Together AI - open-source models with OpenAI compatibility
+  - Set `TOGETHER_API_KEY` environment variable
+  - Example: `{"name": "together-agent", "provider": "together", "model": "mistralai/Mixtral-8x7B-Instruct-v0.1"}`
 - **openrouter**: Unified access to multiple AI models
   - Set `OPENROUTER_API_KEY` environment variable
   - Example: `{"name": "openrouter-agent", "provider": "openrouter", "model": "anthropic/claude-3-haiku"}`
-
-#### **Commercial Providers**
-- **together**: Together AI (free credits available)
 - **openrouter**: Multiple model access (some free options)
 - **replicate**: Community models (may require token)
 

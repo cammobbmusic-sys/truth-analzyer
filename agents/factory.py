@@ -6,6 +6,7 @@ from agents.adapters.http_generic import HTTPGenericAdapter
 from agents.adapters.huggingface import HuggingFaceAdapter
 from agents.adapters.groq_adapter import GroqAdapter
 from agents.adapters.openrouter_adapter import OpenRouterAdapter
+from agents.adapters.together_adapter import TogetherAdapter
 
 
 ADAPTER_MAP = {
@@ -16,7 +17,9 @@ ADAPTER_MAP = {
 
     "groq": GroqAdapter,
 
-    "openrouter": OpenRouterAdapter
+    "openrouter": OpenRouterAdapter,
+
+    "together": TogetherAdapter
 
 }
 
