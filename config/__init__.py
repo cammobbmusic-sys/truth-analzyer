@@ -56,10 +56,14 @@ class YAMLConfig:
         with open(config_path, "r", encoding="utf-8") as f:
             self._cfg = yaml.safe_load(f) or {}
 
-        # Simple environment variable overrides
+        self.apply_env_overrides(self._cfg)
+
+    @staticmethod
+    def apply_env_overrides(config_dict):
+        """Apply environment variable overrides to config dict."""
         for key, value in os.environ.items():
             if key.startswith(('API_', 'REDIS_', 'LOG_')):
-                self._cfg[key.lower()] = value
+                config_dict[key.lower()] = value
 
     def get(self, *keys, default=None):
         """Get nested config value by keys."""
@@ -110,10 +114,7 @@ class Config:
         if os.path.exists(config_path):
             with open(config_path, "r", encoding="utf-8") as f:
                 cfg = yaml.safe_load(f) or {}
-            # Environment variable overrides
-            for key, value in os.environ.items():
-                if key.startswith(('API_', 'REDIS_', 'LOG_')):
-                    cfg[key.lower()] = value
+            YAMLConfig.apply_env_overrides(cfg)
             return cfg
         return {}
 
