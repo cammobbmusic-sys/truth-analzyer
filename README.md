@@ -275,11 +275,40 @@ print(f"Final verdict: {report['verdict']}")
 print(f"Overall confidence: {report['consensus']['confidence']}")
 ```
 
+### Brainstorm Orchestrator
+
+Multi-agent brainstorming with optional verification integration:
+
+```python
+from orchestrator.pipelines.brainstorm_orchestrator import BrainstormOrchestrator
+from config import Config
+
+brainstorm = BrainstormOrchestrator(
+    max_agents=5,
+    max_retries=2,
+    dry_run=True
+)
+conf = Config()
+agent_configs = conf.models[:5]
+
+report = brainstorm.run(
+    prompt="Generate innovative ideas for reducing plastic waste in cities",
+    agent_configs=agent_configs,
+    run_verification=True  # Optional: verify each idea
+)
+
+print(f"Generated {len(report['ideas'])} ideas")
+for idea in report['ideas']:
+    print(f"Idea: {idea['idea'][:100]}...")
+    if 'verification' in idea:
+        print(f"  Verified: {idea['verification'].get('verdict', 'unknown')}")
+```
+
 Features:
-- **Dynamic Scaling**: 3-9 agents with automatic configuration
-- **Intelligent Retries**: Re-runs low-confidence or failing agents
-- **Consensus Aggregation**: Combines multiple verification rounds
-- **Advanced Tracking**: Per-agent metrics, retry counts, disagreement analysis
+- **Multi-Agent Ideation**: 3-9 agents generate diverse ideas
+- **Integrated Verification**: Optional verification of each idea using TriangulationOrchestrator
+- **Retry Logic**: Automatic retries for failed idea generation
+- **Structured Output**: JSON-serializable reports with agent metadata
 - **Safe by Default**: Dry-run mode prevents accidental API calls
 
 ## Extending the System
