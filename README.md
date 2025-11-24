@@ -249,11 +249,38 @@ print(f"Verdict: {report['verdict']}")
 print(f"Confidence: {report['consensus']['confidence']}")
 ```
 
+### Triangulation Orchestrator
+
+Advanced multi-agent orchestration with automatic retries and dynamic scaling:
+
+```python
+from orchestrator.pipelines.triangulation_orchestrator import TriangulationOrchestrator
+from config import Config
+
+tri = TriangulationOrchestrator(
+    similarity_threshold=0.75,
+    max_agents=5,
+    max_retries=2
+)
+conf = Config()
+agent_configs = conf.models[:5]  # 3-9 agents
+
+report = tri.run(
+    text="Complex verification query here",
+    agent_configs=agent_configs,
+    dry_run=True
+)
+
+print(f"Final verdict: {report['verdict']}")
+print(f"Overall confidence: {report['consensus']['confidence']}")
+```
+
 Features:
-- **3-Agent Consensus**: Majority rule with confidence scoring
-- **Semantic Similarity**: Uses embeddings to compare agent outputs
+- **Dynamic Scaling**: 3-9 agents with automatic configuration
+- **Intelligent Retries**: Re-runs low-confidence or failing agents
+- **Consensus Aggregation**: Combines multiple verification rounds
+- **Advanced Tracking**: Per-agent metrics, retry counts, disagreement analysis
 - **Safe by Default**: Dry-run mode prevents accidental API calls
-- **Multiple Inputs**: Accepts agent configs, instances, or orchestrators
 
 ## Extending the System
 
