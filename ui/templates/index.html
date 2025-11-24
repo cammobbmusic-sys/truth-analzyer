@@ -89,6 +89,12 @@
             color: #e74c3c;
             font-size: 14px;
         }
+        .form-text {
+            display: block;
+            margin-top: 5px;
+            font-size: 12px;
+            color: #6c757d;
+        }
         .form-group textarea, .form-group input[type="text"] {
             width: 100%;
             padding: 12px;
@@ -231,17 +237,20 @@
             <h2>🔍 Truth Verification</h2>
             <p>Verify factual claims using 3-agent consensus analysis with semantic similarity scoring.</p>
 
-            <div class="form-group">
-                <label for="verify-query">Query to Verify:</label>
-                <textarea id="verify-query" rows="3" placeholder="Enter a factual claim to verify (e.g., 'The Earth is round and orbits the Sun.')"></textarea>
-            </div>
+            <form id="verify-form">
+                <div class="form-group">
+                    <label for="verify-query">Query to Verify:</label>
+                    <textarea name="query" id="verify-query" rows="3" placeholder="Enter a factual claim to verify (e.g., 'The Earth is round and orbits the Sun.')" required></textarea>
+                </div>
 
-            <div class="checkbox-group">
-                <input type="checkbox" id="verify-live" onchange="toggleLiveWarning('verify')">
-                <label for="verify-live">Enable LIVE API calls (requires GROQ_API_KEY)</label>
-            </div>
+                <div class="form-group">
+                    <label for="live-mode">Live API Mode:</label>
+                    <input type="checkbox" id="live-mode" name="live" />
+                    <small class="form-text text-muted">Enable to use real Groq API calls (requires GROQ_API_KEY)</small>
+                </div>
 
-            <button class="btn" onclick="runVerification()">Verify Claim</button>
+                <button type="submit" class="btn">Verify Claim</button>
+            </form>
 
             <div id="verify-status" class="status"></div>
             <div id="verify-results" class="results">
@@ -255,17 +264,20 @@
             <h2>🎯 Advanced Triangulation</h2>
             <p>Multi-agent analysis with automatic retries and consensus building for complex verification tasks.</p>
 
-            <div class="form-group">
-                <label for="triangulate-query">Query to Analyze:</label>
-                <textarea id="triangulate-query" rows="3" placeholder="Enter a complex query for multi-agent analysis"></textarea>
-            </div>
+            <form id="triangulate-form">
+                <div class="form-group">
+                    <label for="triangulate-query">Query to Analyze:</label>
+                    <textarea name="query" id="triangulate-query" rows="3" placeholder="Enter a complex query for multi-agent analysis" required></textarea>
+                </div>
 
-            <div class="checkbox-group">
-                <input type="checkbox" id="triangulate-live" onchange="toggleLiveWarning('triangulate')">
-                <label for="triangulate-live">Enable LIVE API calls (requires GROQ_API_KEY)</label>
-            </div>
+                <div class="form-group">
+                    <label for="live-mode">Live API Mode:</label>
+                    <input type="checkbox" id="live-mode" name="live" />
+                    <small class="form-text text-muted">Enable to use real Groq API calls (requires GROQ_API_KEY)</small>
+                </div>
 
-            <button class="btn" onclick="runTriangulation()">Run Triangulation</button>
+                <button type="submit" class="btn">Run Triangulation</button>
+            </form>
 
             <div id="triangulate-status" class="status"></div>
             <div id="triangulate-results" class="results">
@@ -279,17 +291,20 @@
             <h2>💡 Multi-Agent Brainstorming</h2>
             <p>Generate diverse ideas and solutions using multiple AI agents with optional verification.</p>
 
-            <div class="form-group">
-                <label for="brainstorm-prompt">Brainstorming Prompt:</label>
-                <textarea id="brainstorm-prompt" rows="3" placeholder="Enter a creative prompt (e.g., 'Generate innovative ideas for reducing plastic waste in cities')"></textarea>
-            </div>
+            <form id="brainstorm-form">
+                <div class="form-group">
+                    <label for="brainstorm-prompt">Brainstorming Prompt:</label>
+                    <textarea name="prompt" id="brainstorm-prompt" rows="3" placeholder="Enter a creative prompt (e.g., 'Generate innovative ideas for reducing plastic waste in cities')" required></textarea>
+                </div>
 
-            <div class="checkbox-group">
-                <input type="checkbox" id="brainstorm-live" onchange="toggleLiveWarning('brainstorm')">
-                <label for="brainstorm-live">Enable LIVE API calls (requires GROQ_API_KEY)</label>
-            </div>
+                <div class="form-group">
+                    <label for="live-mode">Live API Mode:</label>
+                    <input type="checkbox" id="live-mode" name="live" />
+                    <small class="form-text text-muted">Enable to use real Groq API calls (requires GROQ_API_KEY)</small>
+                </div>
 
-            <button class="btn" onclick="runBrainstorm()">Generate Ideas</button>
+                <button type="submit" class="btn">Generate Ideas</button>
+            </form>
 
             <div id="brainstorm-status" class="status"></div>
             <div id="brainstorm-results" class="results">
@@ -316,131 +331,74 @@
             event.target.classList.add('active');
         }
 
-        function toggleLiveWarning(mode) {
-            const checkbox = document.getElementById(`${mode}-live`);
-            const statusEl = document.getElementById(`${mode}-status`);
+        // Form submission handlers
+        document.querySelectorAll("form").forEach(form => {
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
 
-            if (checkbox.checked) {
-                showStatus(`${mode}-status`, "⚠️ LIVE mode enabled - will make real API calls!", "error");
-            } else {
-                statusEl.style.display = 'none';
-            }
-        }
+                const inputField = form.querySelector("textarea[name='query'], textarea[name='prompt']");
+                const live = form.querySelector("#live-mode").checked;
 
-        async function makeRequest(endpoint, data) {
-            try {
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                if (!inputField || !inputField.value.trim()) {
+                    const statusEl = form.parentElement.querySelector(".status");
+                    statusEl.textContent = "Please enter a query or prompt.";
+                    statusEl.className = "status error";
+                    statusEl.style.display = "block";
+                    return;
                 }
 
-                return await response.json();
-            } catch (error) {
-                throw error;
-            }
-        }
+                const payload = {
+                    query: inputField.name === 'query' ? inputField.value : undefined,
+                    prompt: inputField.name === 'prompt' ? inputField.value : undefined,
+                    live: live
+                };
 
-        function showStatus(elementId, message, type = 'success') {
-            const statusEl = document.getElementById(elementId);
-            statusEl.textContent = message;
-            statusEl.className = `status ${type}`;
-            statusEl.style.display = 'block';
-        }
+                let endpoint = "";
+                if(form.id === "verify-form") endpoint = "/verify";
+                else if(form.id === "triangulate-form") endpoint = "/triangulate";
+                else if(form.id === "brainstorm-form") endpoint = "/brainstorm";
 
-        function showResults(elementId, data) {
-            const resultsEl = document.getElementById(elementId);
-            const jsonEl = document.getElementById(elementId.replace('-results', '-json'));
-            jsonEl.textContent = JSON.stringify(data, null, 2);
-            resultsEl.style.display = 'block';
-        }
+                const submitBtn = form.querySelector("button[type='submit']");
+                const originalText = submitBtn.textContent;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<div class="loading"></div> Processing...';
 
-        async function runVerification() {
-            const query = document.getElementById('verify-query').value.trim();
-            if (!query) {
-                showStatus('verify-status', 'Please enter a query to verify.', 'error');
-                return;
-            }
+                const statusEl = form.parentElement.querySelector(".status");
+                const resultDiv = form.parentElement.querySelector(".results");
+                const resultJson = resultDiv.querySelector(".result-json");
 
-            const live = document.getElementById('verify-live').checked;
-            const btn = event.target;
-            const originalText = btn.textContent;
-            btn.disabled = true;
-            btn.innerHTML = '<div class="loading"></div> Analyzing...';
+                try {
+                    statusEl.textContent = live ? "Running LIVE analysis..." : "Running analysis...";
+                    statusEl.className = "status success";
+                    statusEl.style.display = "block";
 
-            try {
-                const statusMsg = live ? 'Running LIVE verification analysis...' : 'Running verification analysis...';
-                showStatus('verify-status', statusMsg, 'success');
-                const result = await makeRequest('/verify', { query, live });
-                showResults('verify-results', result);
-                showStatus('verify-status', 'Verification completed successfully!', 'success');
-            } catch (error) {
-                showStatus('verify-status', `Error: ${error.message}`, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = originalText;
-            }
-        }
+                    const response = await fetch(endpoint, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
 
-        async function runTriangulation() {
-            const query = document.getElementById('triangulate-query').value.trim();
-            if (!query) {
-                showStatus('triangulate-status', 'Please enter a query to analyze.', 'error');
-                return;
-            }
+                    const data = await response.json();
 
-            const live = document.getElementById('triangulate-live').checked;
-            const btn = event.target;
-            const originalText = btn.textContent;
-            btn.disabled = true;
-            btn.innerHTML = '<div class="loading"></div> Analyzing...';
+                    if (response.ok) {
+                        resultJson.textContent = JSON.stringify(data, null, 2);
+                        resultDiv.style.display = "block";
+                        statusEl.textContent = "Analysis completed successfully!";
+                        statusEl.className = "status success";
+                    } else {
+                        throw new Error(data.error || `HTTP ${response.status}`);
+                    }
 
-            try {
-                const statusMsg = live ? 'Running LIVE triangulation analysis...' : 'Running triangulation analysis...';
-                showStatus('triangulate-status', statusMsg, 'success');
-                const result = await makeRequest('/triangulate', { query, live });
-                showResults('triangulate-results', result);
-                showStatus('triangulate-status', 'Triangulation completed successfully!', 'success');
-            } catch (error) {
-                showStatus('triangulate-status', `Error: ${error.message}`, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = originalText;
-            }
-        }
-
-        async function runBrainstorm() {
-            const prompt = document.getElementById('brainstorm-prompt').value.trim();
-            if (!prompt) {
-                showStatus('brainstorm-status', 'Please enter a brainstorming prompt.', 'error');
-                return;
-            }
-
-            const live = document.getElementById('brainstorm-live').checked;
-            const btn = event.target;
-            const originalText = btn.textContent;
-            btn.disabled = true;
-            btn.innerHTML = '<div class="loading"></div> Generating...';
-
-            try {
-                const statusMsg = live ? 'Generating ideas with LIVE API calls...' : 'Generating ideas...';
-                showStatus('brainstorm-status', statusMsg, 'success');
-                const result = await makeRequest('/brainstorm', { prompt, live });
-                showResults('brainstorm-results', result);
-                showStatus('brainstorm-status', 'Brainstorming completed successfully!', 'success');
-            } catch (error) {
-                showStatus('brainstorm-status', `Error: ${error.message}`, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = originalText;
-            }
-        }
+                } catch (error) {
+                    statusEl.textContent = `Error: ${error.message}`;
+                    statusEl.className = "status error";
+                    resultDiv.style.display = "none";
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                }
+            });
+        });
 
         // Initialize with sample data
         document.addEventListener('DOMContentLoaded', function() {
