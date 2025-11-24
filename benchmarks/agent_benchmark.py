@@ -22,30 +22,16 @@ REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 # CAUTION: Prevent accidental live calls
 DRY_RUN = True
 
-# Configuration: override via environment or edit after review
-AGENTS = [
-    {
-        "name": "gemini-3-pro",
-        "provider": "google",
-        "model": "gemini-3-pro",
-        "role": "expert",
-        "timeout": 15
-    },
-    {
-        "name": "gpt-5.1-codex",
-        "provider": "openai",
-        "model": "gpt-5.1-codex",
-        "role": "creative",
-        "timeout": 15
-    },
-    {
-        "name": "sonnet-4.5",
-        "provider": "anthropic",
-        "model": "sonnet-4.5",
-        "role": "analyst",
-        "timeout": 15
-    }
-]
+# Load agents from config dynamically
+try:
+    import sys
+    sys.path.insert(0, str(ROOT.parent))
+    from config import YAMLConfig
+    config = YAMLConfig()
+    AGENTS = config.get('agents') or []
+except ImportError:
+    # Fallback to empty list if config not available
+    AGENTS = []
 
 # Example prompts (you can extend or replace)
 PROMPTS = {
