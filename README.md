@@ -225,6 +225,26 @@ All operations are logged with:
 - Error handling and recovery
 - Exportable audit trails
 
+## Quick Start
+
+### Unified Orchestrator Runner
+
+Use the unified command-line interface to run any orchestration mode:
+
+```bash
+# Verification mode (3-agent consensus)
+python run_orchestrator.py --mode verify --input "The Earth is round and orbits the Sun." --dry_run
+
+# Triangulation mode (advanced multi-agent with retries)
+python run_orchestrator.py --mode triangulate --input "Paris is the capital of France." --max_agents 5 --dry_run
+
+# Brainstorming mode (multi-agent ideation)
+python run_orchestrator.py --mode brainstorm --input "Generate innovative ideas for reducing plastic waste in cities" --dry_run
+
+# Brainstorming with verification
+python run_orchestrator.py --mode brainstorm --input "What are the benefits of renewable energy?" --run_verification --dry_run
+```
+
 ## Core Features
 
 ### Verification Pipeline
