@@ -5,7 +5,7 @@ Also provides backward compatibility with old Config interface.
 
 import os
 import yaml
-from typing import Dict, List
+from typing import Dict, List, Any
 from dataclasses import dataclass
 
 
@@ -65,7 +65,7 @@ class YAMLConfig:
             if key.startswith(('API_', 'REDIS_', 'LOG_')):
                 config_dict[key.lower()] = value
 
-    def get(self, *keys, default=None):
+    def get(self, *keys, default=None) -> Any:
         """Get nested config value by keys."""
         d = self._cfg
         for k in keys:
@@ -75,7 +75,7 @@ class YAMLConfig:
                 return default
         return d
 
-    def all(self):
+    def all(self) -> Dict[str, Any]:
         """Return entire config dict."""
         return self._cfg
 

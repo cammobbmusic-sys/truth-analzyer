@@ -1,20 +1,22 @@
 
 
+from typing import List, Dict, Optional, Any
 from agents.factory import create_agent
+from agents.base import ModelAgent
 
 
 
 class Orchestrator:
 
-    '''
+    """
 
     Orchestrates multiple agents and pipelines.
 
-    '''
+    """
 
 
 
-    def __init__(self, agent_configs: list = None, dry_run=True):
+    def __init__(self, agent_configs: Optional[List[Dict[str, Any]]] = None, dry_run: bool = True) -> None:
 
         self.agent_configs = agent_configs or []
 
@@ -24,23 +26,23 @@ class Orchestrator:
 
             self._initialize_agents()
 
-    def _initialize_agents(self):
+    def _initialize_agents(self) -> None:
         """Initialize agents from configurations."""
         for cfg in self.agent_configs:
             if cfg is not None:
                 self.agents.append(create_agent(cfg))
 
-    def run_all_agents(self, prompt: str):
+    def run_all_agents(self, prompt: str) -> Dict[str, str]:
 
-        '''
+        """
 
         Run all agents with the given prompt (simulated responses for safety)
 
         Returns empty dict if no agents are instantiated (dry_run mode)
 
-        '''
+        """
 
-        results = {}
+        results: Dict[str, str] = {}
 
         if not self.agents:
 

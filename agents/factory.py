@@ -1,11 +1,9 @@
 
 
+from typing import Dict, Any
 from agents.base import ModelAgent
-
 from agents.adapters.http_generic import HTTPGenericAdapter
-
 from agents.adapters.huggingface import HuggingFaceAdapter
-
 
 
 ADAPTER_MAP = {
@@ -17,7 +15,7 @@ ADAPTER_MAP = {
 }
 
 
-def normalize_agent_config(config: dict) -> dict:
+def normalize_agent_config(config: Dict[str, Any]) -> Dict[str, Any]:
     """
     Normalize and validate agent configuration.
     Sets defaults and validates required fields.
@@ -46,7 +44,7 @@ def normalize_agent_config(config: dict) -> dict:
     return config
 
 
-def create_agent(config: dict) -> ModelAgent:
+def create_agent(config: Dict[str, Any]) -> ModelAgent:
 
     '''
 
