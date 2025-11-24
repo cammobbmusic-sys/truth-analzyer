@@ -5,6 +5,7 @@ from agents.base import ModelAgent
 from agents.adapters.http_generic import HTTPGenericAdapter
 from agents.adapters.huggingface import HuggingFaceAdapter
 from agents.adapters.groq_adapter import GroqAdapter
+from agents.adapters.openrouter_adapter import OpenRouterAdapter
 
 
 ADAPTER_MAP = {
@@ -13,7 +14,9 @@ ADAPTER_MAP = {
 
     "huggingface": HuggingFaceAdapter,
 
-    "groq": GroqAdapter
+    "groq": GroqAdapter,
+
+    "openrouter": OpenRouterAdapter
 
 }
 

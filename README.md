@@ -110,12 +110,15 @@ The system supports multiple AI providers through a modular adapter architecture
 
 #### **Free Providers (No API Key Required)**
 - **generic**: Mock responses for testing and development
-- **huggingface**: HF Inference API (rate-limited free tier)
+- **huggingface**: HF Inference API (rate-limited free tier, currently deprecated)
 
 #### **Free Providers (API Key Required)**
 - **groq**: Groq API with free tier - fast inference, Llama models
   - Set `GROQ_API_KEY` environment variable
   - Example: `{"name": "groq-agent", "provider": "groq", "model": "llama-3.1-8b-instant"}`
+- **openrouter**: Unified access to multiple AI models
+  - Set `OPENROUTER_API_KEY` environment variable
+  - Example: `{"name": "openrouter-agent", "provider": "openrouter", "model": "anthropic/claude-3-haiku"}`
 
 #### **Commercial Providers**
 - **together**: Together AI (free credits available)
@@ -290,20 +293,21 @@ Advanced multi-agent orchestration with automatic retries and dynamic scaling:
 
 ```python
 from orchestrator.pipelines.triangulation_orchestrator import TriangulationOrchestrator
-from config import Config
+from agents.factory import create_agent
 
-tri = TriangulationOrchestrator(
-    similarity_threshold=0.75,
-    max_agents=5,
-    max_retries=2
-)
-conf = Config()
-agent_configs = conf.models[:5]  # 3-9 agents
+# Create agents from different providers
+agents = [
+    create_agent({"name": "groq-llama", "provider": "groq", "model": "llama-3.1-8b-instant"}),
+    create_agent({"name": "openrouter-claude", "provider": "openrouter", "model": "anthropic/claude-3-haiku"}),
+    create_agent({"name": "hf-falcon", "provider": "huggingface", "model": "tiiuae/falcon-7b-instruct"})
+]
+
+tri = TriangulationOrchestrator(max_agents=5, max_retries=2)
 
 report = tri.run(
-    text="Complex verification query here",
-    agent_configs=agent_configs,
-    dry_run=True
+    text="What are the environmental benefits of electric vehicles?",
+    agent_instances=agents,
+    dry_run=True  # Safe mode
 )
 
 print(f"Final verdict: {report['verdict']}")
