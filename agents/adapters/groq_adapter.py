@@ -15,7 +15,8 @@ class GroqAdapter(ModelAgent):
     2. Set environment variable: export GROQ_API_KEY=your_key_here
     3. Or create .env file with: GROQ_API_KEY=your_key_here
 
-    Supported models: mixtral-8x7b-instruct, llama2-70b-4096, etc.
+    Supported models: llama-3.1-8b-instant, llama-3.3-70b-versatile, etc.
+    See https://console.groq.com/docs/models for full list.
     """
 
     def __init__(self, name: str, provider: str, model: str, role: str = "agent", timeout: int = 15):

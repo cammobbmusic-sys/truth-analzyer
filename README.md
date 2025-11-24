@@ -113,9 +113,9 @@ The system supports multiple AI providers through a modular adapter architecture
 - **huggingface**: HF Inference API (rate-limited free tier)
 
 #### **Free Providers (API Key Required)**
-- **groq**: Groq API with free tier - fast inference, Mixtral models
+- **groq**: Groq API with free tier - fast inference, Llama models
   - Set `GROQ_API_KEY` environment variable
-  - Example: `{"name": "groq-agent", "provider": "groq", "model": "mixtral-8x7b-instruct"}`
+  - Example: `{"name": "groq-agent", "provider": "groq", "model": "llama-3.1-8b-instant"}`
 
 #### **Commercial Providers**
 - **together**: Together AI (free credits available)
