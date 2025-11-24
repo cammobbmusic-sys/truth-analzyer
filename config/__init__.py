@@ -8,6 +8,14 @@ import yaml
 from typing import Dict, List, Any
 from dataclasses import dataclass
 
+# Load environment variables from .env file if it exists
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # python-dotenv not installed, skip automatic loading
+    pass
+
 
 # Backward compatibility classes
 @dataclass
@@ -118,19 +126,19 @@ class Config:
             return cfg
         return {}
 
-    def _load_model_configs(self, yaml_config) -> List[ModelConfig]:
-        """Load AI model configurations from YAML."""
+    def _load_model_configs(self, yaml_config) -> List[Dict[str, Any]]:
+        """Load AI model configurations from YAML as dictionaries for factory compatibility."""
         agents = yaml_config.get('agents', [])
         models = []
         for agent in agents:
             if isinstance(agent, dict):
-                models.append(ModelConfig(
-                    name=agent.get('name', agent.get('model', 'unnamed')),
-                    model_name=agent.get('model', ''),
-                    role=agent.get('role', 'general'),
-                    temperature=agent.get('temperature', 0.7),
-                    max_tokens=agent.get('max_tokens', 2000)
-                ))
+                models.append({
+                    'name': agent.get('name', agent.get('model', 'unnamed')),
+                    'model': agent.get('model', ''),
+                    'provider': agent.get('provider', 'generic'),
+                    'role': agent.get('role', 'general'),
+                    'timeout': agent.get('timeout', 15),
+                })
         return models
 
     def _load_prompt_templates(self) -> Dict[str, str]:

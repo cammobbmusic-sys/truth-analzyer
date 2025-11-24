@@ -7,6 +7,7 @@ from agents.adapters.huggingface import HuggingFaceAdapter
 from agents.adapters.groq_adapter import GroqAdapter
 from agents.adapters.openrouter_adapter import OpenRouterAdapter
 from agents.adapters.together_adapter import TogetherAdapter
+from agents.adapters.cohere_adapter import CohereAdapter
 
 
 ADAPTER_MAP = {
@@ -17,9 +18,11 @@ ADAPTER_MAP = {
 
     "groq": GroqAdapter,
 
-    "openrouter": OpenRouterAdapter,
+    "openrouter": OpenRouterAdapter,  # PRIORITY: Use OpenRouter over Together
 
-    "together": TogetherAdapter
+    "together": TogetherAdapter,      # DEPRECATED: Focus on OpenRouter instead
+
+    "cohere": CohereAdapter           # NEW: Cohere AI for diverse responses
 
 }
 

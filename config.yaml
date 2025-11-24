@@ -2,9 +2,15 @@
 # Configuration for agent benchmarking and orchestration
 
 agents:
-  - name: test-agent
-    provider: generic
-    model: "test-model"
+  - name: groq-llama
+    provider: groq
+    model: "llama-3.1-8b-instant"
+  - name: openrouter-claude
+    provider: openrouter
+    model: "anthropic/claude-3-haiku"
+  - name: cohere-command-nightly
+    provider: cohere
+    model: "command-nightly"
 
 # Benchmarking settings
 benchmarking:

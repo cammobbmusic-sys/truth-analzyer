@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """
-Multi-Agent Orchestrator Setup: Groq + HuggingFace + OpenRouter
+Multi-Agent Orchestrator Setup: Groq + OpenRouter (Priority) + HuggingFace
 Safe to run; set dry_run=False after adding valid API keys
+
+PRIORITY ORDER:
+1. OpenRouter (multiple models: Claude, GPT, Gemini, etc.)
+2. Groq (fast Llama models)
+3. HuggingFace (framework works, API deprecated)
 """
 
 import os
@@ -145,12 +150,13 @@ def main():
     print("🎉 MULTI-AGENT SYSTEM DEMO COMPLETE!")
     print()
     print("To enable live API calls:")
-    print("1. Set your API keys as environment variables:")
+    print("1. Get OpenRouter API key (HIGH PRIORITY): https://openrouter.ai/keys")
+    print("   export OPENROUTER_API_KEY=your_key")
+    print("2. Keep your existing keys:")
     print("   export GROQ_API_KEY=your_key")
     print("   export HF_TOKEN=your_token")
-    print("   export OPENROUTER_API_KEY=your_key")
-    print("2. Change dry_run=False in the function calls")
-    print("3. Re-run for real AI responses!")
+    print("3. Change dry_run=False in the function calls")
+    print("4. Re-run for real multi-model AI responses!")
 
 if __name__ == "__main__":
     main()
