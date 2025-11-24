@@ -6,9 +6,11 @@ import redis
 
 import json
 
+from cache import BaseCache
 
 
-class RedisCacheAdapter:
+
+class RedisCacheAdapter(BaseCache):
 
     def __init__(self, url=None, db=0):
 

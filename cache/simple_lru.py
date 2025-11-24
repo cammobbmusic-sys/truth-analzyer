@@ -6,9 +6,11 @@ import threading
 
 import time
 
+from cache import BaseCache
 
 
-class SimpleLRUCache:
+
+class SimpleLRUCache(BaseCache):
 
     def __init__(self, max_size=128, ttl=300):
 
