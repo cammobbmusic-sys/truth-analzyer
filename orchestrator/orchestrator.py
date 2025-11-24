@@ -22,13 +22,13 @@ class Orchestrator:
 
         if not dry_run:
 
-            for cfg in self.agent_configs:
+            self._initialize_agents()
 
-                if cfg is not None:
-
-                    self.agents.append(create_agent(cfg))
-
-
+    def _initialize_agents(self):
+        """Initialize agents from configurations."""
+        for cfg in self.agent_configs:
+            if cfg is not None:
+                self.agents.append(create_agent(cfg))
 
     def run_all_agents(self, prompt: str):
 
