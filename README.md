@@ -225,6 +225,36 @@ All operations are logged with:
 - Error handling and recovery
 - Exportable audit trails
 
+## Core Features
+
+### Verification Pipeline
+
+Run 3-agent consensus verification with semantic similarity analysis:
+
+```python
+from orchestrator.pipelines.verify_pipeline import VerificationPipeline
+from config import Config
+
+pipeline = VerificationPipeline(similarity_threshold=0.75)
+conf = Config()
+agent_configs = conf.models[:3]
+
+report = pipeline.run(
+    text="The Eiffel Tower is in Paris and was completed in 1889.",
+    agent_configs=agent_configs,
+    dry_run=True  # Safe mode
+)
+
+print(f"Verdict: {report['verdict']}")
+print(f"Confidence: {report['consensus']['confidence']}")
+```
+
+Features:
+- **3-Agent Consensus**: Majority rule with confidence scoring
+- **Semantic Similarity**: Uses embeddings to compare agent outputs
+- **Safe by Default**: Dry-run mode prevents accidental API calls
+- **Multiple Inputs**: Accepts agent configs, instances, or orchestrators
+
 ## Extending the System
 
 ### Adding New Models
@@ -239,6 +269,23 @@ Define specialized roles for different analysis tasks:
 - **verification**: For fact-checking and consensus building
 - **brainstorming**: For creative idea generation
 - **analysis**: For in-depth examination and evaluation
+
+### Adding New Providers
+
+1. Create `agents/adapters/new_provider.py` inheriting from `ModelAgent`
+2. Implement the `generate()` method
+3. Add to `ADAPTER_MAP` in `agents/factory.py`
+4. Update `enforce_free_providers.py` if it's a free provider
+
+Example:
+```python
+from agents.base import ModelAgent
+
+class NewProviderAdapter(ModelAgent):
+    def generate(self, prompt: str, temperature: float = 0.7, max_tokens: int = 256) -> str:
+        # Your implementation here
+        return "response"
+```
 
 ### Creating Custom Templates
 
