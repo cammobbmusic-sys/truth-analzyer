@@ -17,6 +17,34 @@ ADAPTER_MAP = {
 }
 
 
+def normalize_agent_config(config: dict) -> dict:
+    """
+    Normalize and validate agent configuration.
+    Sets defaults and validates required fields.
+    """
+    if not isinstance(config, dict):
+        raise ValueError("Agent config must be a dictionary")
+
+    # Set defaults
+    defaults = {
+        'role': 'agent',
+        'timeout': 15,
+        'model': '',
+        'name': 'unnamed-agent',
+        'provider': 'generic'
+    }
+
+    for key, default in defaults.items():
+        config.setdefault(key, default)
+
+    # Validate required fields
+    required = ['name', 'provider', 'model']
+    missing = [key for key in required if not config.get(key)]
+    if missing:
+        raise ValueError(f"Missing required agent config fields: {missing}")
+
+    return config
+
 
 def create_agent(config: dict) -> ModelAgent:
 
@@ -28,19 +56,22 @@ def create_agent(config: dict) -> ModelAgent:
 
     '''
 
-    adapter_class = ADAPTER_MAP.get(config.get("provider").lower(), HTTPGenericAdapter)
+    # Normalize and validate config
+    normalized_config = normalize_agent_config(config)
+
+    adapter_class = ADAPTER_MAP.get(normalized_config["provider"].lower(), HTTPGenericAdapter)
 
     return adapter_class(
 
-        name=config.get("name", "unnamed-agent"),
+        name=normalized_config["name"],
 
-        provider=config.get("provider", "generic"),
+        provider=normalized_config["provider"],
 
-        model=config.get("model", ""),
+        model=normalized_config["model"],
 
-        role=config.get("role", "agent"),
+        role=normalized_config["role"],
 
-        timeout=config.get("timeout", 15)
+        timeout=normalized_config["timeout"]
 
     )
 
