@@ -1,6 +1,7 @@
 # Core dependencies
 numpy>=1.21.0
 requests>=2.28.0
+flask>=2.0.0
 
 # Optional: Enhanced embeddings (with fallback available)
 sentence-transformers>=2.2.0

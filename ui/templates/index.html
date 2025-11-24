@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Agent Truth Analyzer Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        .tab:hover {
+            background: #e9ecef;
+        }
+        .tab.active {
+            background: white;
+            border-bottom-color: #007bff;
+            color: #007bff;
+            font-weight: bold;
+        }
+        .tab-content {
+            padding: 30px;
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .form-group textarea, .form-group input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            resize: vertical;
+        }
+        .form-group textarea:focus, .form-group input[type="text"]:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+        .btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            display: none;
+        }
+        .results h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .result-json {
+            background: #2c3e50;
+            color: #e1e8ed;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            display: none;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .feature-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #007bff;
+        }
+        .feature-card h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .feature-card p {
+            color: #6c757d;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Multi-Agent Truth Analyzer</h1>
+            <p>Advanced AI-powered verification and ideation platform</p>
+        </div>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>🔍 Verification</h3>
+                <p>3-agent consensus verification with semantic similarity analysis for fact-checking and truth validation.</p>
+            </div>
+            <div class="feature-card">
+                <h3>🎯 Triangulation</h3>
+                <p>Advanced multi-agent orchestration with automatic retries and dynamic scaling for complex analysis.</p>
+            </div>
+            <div class="feature-card">
+                <h3>💡 Brainstorming</h3>
+                <p>Multi-agent ideation sessions with optional verification integration for creative problem-solving.</p>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('verify')">Verification</div>
+            <div class="tab" onclick="switchTab('triangulate')">Triangulation</div>
+            <div class="tab" onclick="switchTab('brainstorm')">Brainstorming</div>
+        </div>
+
+        <!-- Verification Tab -->
+        <div id="verify" class="tab-content active">
+            <h2>🔍 Truth Verification</h2>
+            <p>Verify factual claims using 3-agent consensus analysis with semantic similarity scoring.</p>
+
+            <div class="form-group">
+                <label for="verify-query">Query to Verify:</label>
+                <textarea id="verify-query" rows="3" placeholder="Enter a factual claim to verify (e.g., 'The Earth is round and orbits the Sun.')"></textarea>
+            </div>
+
+            <button class="btn" onclick="runVerification()">Verify Claim</button>
+
+            <div id="verify-status" class="status"></div>
+            <div id="verify-results" class="results">
+                <h3>Verification Results</h3>
+                <div id="verify-json" class="result-json"></div>
+            </div>
+        </div>
+
+        <!-- Triangulation Tab -->
+        <div id="triangulate" class="tab-content">
+            <h2>🎯 Advanced Triangulation</h2>
+            <p>Multi-agent analysis with automatic retries and consensus building for complex verification tasks.</p>
+
+            <div class="form-group">
+                <label for="triangulate-query">Query to Analyze:</label>
+                <textarea id="triangulate-query" rows="3" placeholder="Enter a complex query for multi-agent analysis"></textarea>
+            </div>
+
+            <button class="btn" onclick="runTriangulation()">Run Triangulation</button>
+
+            <div id="triangulate-status" class="status"></div>
+            <div id="triangulate-results" class="results">
+                <h3>Triangulation Results</h3>
+                <div id="triangulate-json" class="result-json"></div>
+            </div>
+        </div>
+
+        <!-- Brainstorm Tab -->
+        <div id="brainstorm" class="tab-content">
+            <h2>💡 Multi-Agent Brainstorming</h2>
+            <p>Generate diverse ideas and solutions using multiple AI agents with optional verification.</p>
+
+            <div class="form-group">
+                <label for="brainstorm-prompt">Brainstorming Prompt:</label>
+                <textarea id="brainstorm-prompt" rows="3" placeholder="Enter a creative prompt (e.g., 'Generate innovative ideas for reducing plastic waste in cities')"></textarea>
+            </div>
+
+            <button class="btn" onclick="runBrainstorm()">Generate Ideas</button>
+
+            <div id="brainstorm-status" class="status"></div>
+            <div id="brainstorm-results" class="results">
+                <h3>Brainstorming Results</h3>
+                <div id="brainstorm-json" class="result-json"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active class to selected tab
+            event.target.classList.add('active');
+        }
+
+        async function makeRequest(endpoint, data) {
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        function showStatus(elementId, message, type = 'success') {
+            const statusEl = document.getElementById(elementId);
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+            statusEl.style.display = 'block';
+        }
+
+        function showResults(elementId, data) {
+            const resultsEl = document.getElementById(elementId);
+            const jsonEl = document.getElementById(elementId.replace('-results', '-json'));
+            jsonEl.textContent = JSON.stringify(data, null, 2);
+            resultsEl.style.display = 'block';
+        }
+
+        async function runVerification() {
+            const query = document.getElementById('verify-query').value.trim();
+            if (!query) {
+                showStatus('verify-status', 'Please enter a query to verify.', 'error');
+                return;
+            }
+
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading"></div> Analyzing...';
+
+            try {
+                showStatus('verify-status', 'Running verification analysis...', 'success');
+                const result = await makeRequest('/verify', { query });
+                showResults('verify-results', result);
+                showStatus('verify-status', 'Verification completed successfully!', 'success');
+            } catch (error) {
+                showStatus('verify-status', `Error: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
+        async function runTriangulation() {
+            const query = document.getElementById('triangulate-query').value.trim();
+            if (!query) {
+                showStatus('triangulate-status', 'Please enter a query to analyze.', 'error');
+                return;
+            }
+
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading"></div> Analyzing...';
+
+            try {
+                showStatus('triangulate-status', 'Running triangulation analysis...', 'success');
+                const result = await makeRequest('/triangulate', { query });
+                showResults('triangulate-results', result);
+                showStatus('triangulate-status', 'Triangulation completed successfully!', 'success');
+            } catch (error) {
+                showStatus('triangulate-status', `Error: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
+        async function runBrainstorm() {
+            const prompt = document.getElementById('brainstorm-prompt').value.trim();
+            if (!prompt) {
+                showStatus('brainstorm-status', 'Please enter a brainstorming prompt.', 'error');
+                return;
+            }
+
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading"></div> Generating...';
+
+            try {
+                showStatus('brainstorm-status', 'Generating ideas...', 'success');
+                const result = await makeRequest('/brainstorm', { prompt });
+                showResults('brainstorm-results', result);
+                showStatus('brainstorm-status', 'Brainstorming completed successfully!', 'success');
+            } catch (error) {
+                showStatus('brainstorm-status', `Error: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
+        // Initialize with sample data
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('verify-query').value = 'The Eiffel Tower is located in Paris and was completed in 1889.';
+            document.getElementById('triangulate-query').value = 'What are the environmental impacts of electric vehicles?';
+            document.getElementById('brainstorm-prompt').value = 'Generate innovative ideas for reducing food waste in households.';
+        });
+    </script>
+</body>
+</html>

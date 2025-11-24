@@ -245,6 +245,21 @@ python run_orchestrator.py --mode brainstorm --input "Generate innovative ideas 
 python run_orchestrator.py --mode brainstorm --input "What are the benefits of renewable energy?" --run_verification --dry_run
 ```
 
+### Web Dashboard
+
+Launch the interactive web interface for all orchestration modes:
+
+```bash
+python ui/dashboard.py
+# Then open http://localhost:5000 in your browser
+```
+
+The web dashboard provides:
+- **Interactive Forms**: Easy-to-use interfaces for all three modes
+- **Real-time Results**: Live JSON output with detailed analysis
+- **Visual Feedback**: Loading indicators and status messages
+- **Sample Data**: Pre-filled examples for quick testing
+
 ## Core Features
 
 ### Verification Pipeline
