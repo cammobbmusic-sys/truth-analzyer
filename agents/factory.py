@@ -4,13 +4,16 @@ from typing import Dict, Any
 from agents.base import ModelAgent
 from agents.adapters.http_generic import HTTPGenericAdapter
 from agents.adapters.huggingface import HuggingFaceAdapter
+from agents.adapters.groq_adapter import GroqAdapter
 
 
 ADAPTER_MAP = {
 
     "generic": HTTPGenericAdapter,
 
-    "huggingface": HuggingFaceAdapter
+    "huggingface": HuggingFaceAdapter,
+
+    "groq": GroqAdapter
 
 }
 

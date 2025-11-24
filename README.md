@@ -106,13 +106,30 @@ Edit `config.py` to:
 
 ### Supported Models
 
-This system currently uses mock AI models for demonstration. The architecture supports integration with real AI providers:
+The system supports multiple AI providers through a modular adapter architecture:
 
-- **gemini-3-pro** (Google): Optimized for quick verification tasks - fast, focused analysis
-- **gpt-5.1-codex** (OpenAI): Best for creative brainstorming - innovative, code-capable generation
-- **sonnet-4.5** (Anthropic): General-purpose model for mixed tasks - balanced reasoning and analysis
+#### **Free Providers (No API Key Required)**
+- **generic**: Mock responses for testing and development
+- **huggingface**: HF Inference API (rate-limited free tier)
 
-To integrate with real APIs, replace the MockModel class in `agents/model_agent.py` with actual API calls to these providers.
+#### **Free Providers (API Key Required)**
+- **groq**: Groq API with free tier - fast inference, Mixtral models
+  - Set `GROQ_API_KEY` environment variable
+  - Example: `{"name": "groq-agent", "provider": "groq", "model": "mixtral-8x7b-instruct"}`
+
+#### **Commercial Providers**
+- **together**: Together AI (free credits available)
+- **openrouter**: Multiple model access (some free options)
+- **replicate**: Community models (may require token)
+
+#### **Integration**
+
+The system uses adapter classes in `agents/adapters/` that implement the `ModelAgent` interface. Add new providers by:
+
+1. Create `agents/adapters/new_provider.py` inheriting from `ModelAgent`
+2. Implement the `generate()` method
+3. Add to `ADAPTER_MAP` in `agents/factory.py`
+4. Update `enforce_free_providers.py` if it's a free provider
 
 ## API Reference
 
