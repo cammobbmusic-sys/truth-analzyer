@@ -6,6 +6,7 @@ and computes final consensus for truth verification.
 """
 
 import logging
+import time
 from typing import List, Dict, Any, Optional
 
 try:
@@ -17,6 +18,12 @@ try:
     from agents.factory import create_agent
 except Exception:
     create_agent = None
+
+# Performance optimizer integration
+try:
+    from optimizer import optimizer
+except Exception:
+    optimizer = None
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -76,9 +83,16 @@ class TriangulationOrchestrator:
             agents.append(None)
 
         reports = []
+        start_times = {}  # Track start times for performance measurement
+
         for idx, agent in enumerate(agents):
             retry_count = 0
             agent_report = None
+
+            # Get agent name for tracking
+            agent_name = getattr(agent, 'name', f'agent_{idx}')
+            start_times[agent_name] = time.time()
+
             while retry_count <= self.max_retries:
                 if self.verifier:
                     agent_report = self.verifier.run(
@@ -95,6 +109,30 @@ class TriangulationOrchestrator:
             agent_report['retries'] = retry_count
             reports.append(agent_report)
 
+            # Performance tracking
+            if optimizer and agent_name in start_times:
+                end_time = time.time()
+                response_time = end_time - start_times[agent_name]
+
+                # Extract performance metrics
+                success = agent_report.get('agents', [{}])[0].get('error') is None
+                confidence = agent_report.get('consensus', {}).get('confidence', 0.5)
+
+                # Categorize query type (simple heuristic)
+                query_lower = text.lower()
+                if any(word in query_lower for word in ['what', 'who', 'when', 'where', 'how many']):
+                    query_type = 'factual'
+                elif any(word in query_lower for word in ['explain', 'analyze', 'compare']):
+                    query_type = 'analytical'
+                elif any(word in query_lower for word in ['create', 'generate', 'design']):
+                    query_type = 'creative'
+                else:
+                    query_type = 'general'
+
+                # Track performance (cost estimation - this would need real cost data)
+                estimated_cost = 0.001 if 'openrouter' in agent_name.lower() else 0.0005  # Rough estimates
+                optimizer.track_performance(agent_name, response_time, confidence, success, query_type, estimated_cost)
+
         # Compute aggregated consensus across all agents
         final_texts = [r.get('agents', [{}])[0].get('output', '[SIMULATED]') for r in reports]
         if self.verifier:
@@ -104,6 +142,35 @@ class TriangulationOrchestrator:
             pairwise_matrix = []
             consensus = {'verdict': 'simulated', 'supporting_pairs': [], 'confidence': 1.0}
 
+        # Get optimization insights
+        optimization_insights = {}
+        if optimizer:
+            # Determine query type for recommendations
+            query_lower = text.lower()
+            if any(word in query_lower for word in ['what', 'who', 'when', 'where', 'how many']):
+                query_type = 'factual'
+            elif any(word in query_lower for word in ['explain', 'analyze', 'compare']):
+                query_type = 'analytical'
+            elif any(word in query_lower for word in ['create', 'generate', 'design']):
+                query_type = 'creative'
+            else:
+                query_type = 'general'
+
+            # Get best agent recommendations
+            best_speed, speed_score = optimizer.get_best_agent(query_type, 'speed')
+            best_accuracy, accuracy_score = optimizer.get_best_agent(query_type, 'accuracy')
+            best_cost, cost_score = optimizer.get_best_agent(query_type, 'cost')
+
+            optimization_insights = {
+                'query_type': query_type,
+                'recommendations': {
+                    'best_for_speed': {'agent': best_speed, 'score': speed_score},
+                    'best_for_accuracy': {'agent': best_accuracy, 'score': accuracy_score},
+                    'best_for_cost': {'agent': best_cost, 'score': cost_score}
+                },
+                'total_queries_tracked': sum(m.total_queries for m in optimizer.metrics.values())
+            }
+
         final_report = {
             'input': text,
             'agents_count': len(agents),
@@ -111,7 +178,8 @@ class TriangulationOrchestrator:
             'pairwise_similarity': pairwise_matrix,
             'consensus': consensus,
             'verdict': consensus.get('verdict', 'unknown'),
-            'dry_run': dry_run
+            'dry_run': dry_run,
+            'optimization_insights': optimization_insights
         }
 
         return final_report
