@@ -377,6 +377,7 @@ class ModelEvaluator:
             results_data = []
             for result in self.results[-1000:]:  # Keep last 1000 results
                 result_dict = asdict(result)
+                result_dict['genre'] = result.genre.value  # Convert enum to string
                 result_dict['timestamp'] = result.timestamp.isoformat()
                 results_data.append(result_dict)
 

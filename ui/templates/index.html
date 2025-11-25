@@ -13,6 +13,7 @@
             min-height: 100vh;
             color: #2c3e50;
             line-height: 1.6;
+            scroll-behavior: smooth;
         }
 
         * {
@@ -249,6 +250,9 @@
             border: 2px solid rgba(255,255,255,0.3);
             border-radius: 12px;
             font-size: 16px;
+            line-height: 1.5;
+            resize: vertical;
+            min-height: 120px;
             font-family: inherit;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             background: rgba(255, 255, 255, 0.9);
@@ -264,6 +268,16 @@
                 0 0 0 3px rgba(102, 126, 234, 0.1),
                 0 4px 12px rgba(102, 126, 234, 0.15);
             background: rgba(255, 255, 255, 0.95);
+        }
+
+        .form-group textarea {
+            background: rgba(255,255,255,0.02);
+            transition: all 0.3s ease;
+        }
+
+        .form-group textarea:hover {
+            background: rgba(255,255,255,0.04);
+            border-color: rgba(255,255,255,0.4);
         }
 
         .form-group textarea::placeholder, .form-group input[type="text"]::placeholder {
@@ -336,7 +350,7 @@
                 inset 0 1px 0 rgba(255,255,255,0.4);
             display: none;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .results::before {
@@ -367,8 +381,9 @@
             font-size: 14px;
             overflow-x: auto;
             white-space: pre-wrap;
-            max-height: 400px;
-            overflow-y: auto;
+            max-height: none;
+            overflow-y: visible;
+            margin-top: 20px;
         }
         .result-summary {
             background: rgba(255, 255, 255, 0.9);
@@ -668,6 +683,10 @@
                 <span class="tab-icon">💡</span>
                 <span class="tab-text">Multi-Agent Brainstorming</span>
             </div>
+            <div class="tab" onclick="switchTab('debate')">
+                <span class="tab-icon">⚔️</span>
+                <span class="tab-text">AI Debate Arena</span>
+            </div>
         </div>
 
         <!-- Verification Tab -->
@@ -678,13 +697,19 @@
             <form id="verify-form">
                 <div class="form-group">
                     <label for="verify-query">Query to Verify:</label>
-                    <textarea name="query" id="verify-query" rows="3" placeholder="Enter a factual claim to verify (e.g., 'The Earth is round and orbits the Sun.')" required></textarea>
+                    <textarea name="query" id="verify-query" rows="10" placeholder="Enter a factual claim to verify (e.g., 'The Earth is round and orbits the Sun.')" required></textarea>
                 </div>
 
                 <div class="form-group">
                     <label for="live-mode">Live API Mode:</label>
                     <input type="checkbox" id="live-mode" name="live" />
                     <small class="form-text text-muted">Enable to use real API calls with mixed providers (Groq, OpenRouter, Cohere)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="absolute-truth-mode">Absolute Truth Mode:</label>
+                    <input type="checkbox" id="absolute-truth-mode" name="absolute_truth" />
+                    <small class="form-text text-muted">⚠️ Requires unanimous agreement with 98%+ confidence for truth claims</small>
                 </div>
 
                 <button type="submit" class="btn">Verify Claim</button>
@@ -705,7 +730,7 @@
             <form id="triangulate-form">
                 <div class="form-group">
                     <label for="triangulate-query">Query to Analyze:</label>
-                    <textarea name="query" id="triangulate-query" rows="3" placeholder="Enter a complex query for multi-agent analysis" required></textarea>
+                    <textarea name="query" id="triangulate-query" rows="10" placeholder="Enter a complex query for multi-agent analysis" required></textarea>
                 </div>
 
                 <div class="form-group">
@@ -732,7 +757,7 @@
             <form id="brainstorm-form">
                 <div class="form-group">
                     <label for="brainstorm-prompt">Brainstorming Prompt:</label>
-                    <textarea name="prompt" id="brainstorm-prompt" rows="3" placeholder="Enter a creative prompt (e.g., 'Generate innovative ideas for reducing plastic waste in cities')" required></textarea>
+                    <textarea name="prompt" id="brainstorm-prompt" rows="10" placeholder="Enter a creative prompt (e.g., 'Generate innovative ideas for reducing plastic waste in cities')" required></textarea>
                 </div>
 
                 <div class="form-group">
@@ -748,6 +773,48 @@
             <div id="brainstorm-results" class="results">
                 <h3>Brainstorming Results</h3>
                 <div id="brainstorm-json" class="result-json"></div>
+            </div>
+        </div>
+
+        <!-- Debate Tab -->
+        <div id="debate" class="tab-content">
+            <h2>⚔️ AI Debate Arena</h2>
+            <p>Watch AI agents engage in structured debate rounds, building arguments and challenging each other's reasoning.</p>
+
+            <form id="debate-form">
+                <div class="form-group">
+                    <label for="debate-topic">Debate Topic:</label>
+                    <textarea name="topic" id="debate-topic" rows="8" placeholder="Enter a debate topic or question (e.g., 'Should social media platforms be regulated by governments?')" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="debate-rounds">Number of Debate Rounds:</label>
+                    <select id="debate-rounds" name="rounds">
+                        <option value="2">2 Rounds (Quick Debate)</option>
+                        <option value="3" selected>3 Rounds (Standard Debate)</option>
+                        <option value="5">5 Rounds (Extended Debate)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="live-mode">Live API Mode:</label>
+                    <input type="checkbox" id="live-mode" name="live" />
+                    <small class="form-text text-muted">Enable to use real API calls with mixed providers (Groq, OpenRouter, Cohere)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="absolute-truth-mode">Absolute Truth Mode:</label>
+                    <input type="checkbox" id="absolute-truth-mode" name="absolute_truth" />
+                    <small class="form-text text-muted">⚠️ Requires unanimous agreement with 98%+ confidence for final conclusions</small>
+                </div>
+
+                <button type="submit" class="btn">Start Debate</button>
+            </form>
+
+            <div id="debate-status" class="status"></div>
+            <div id="debate-results" class="results">
+                <h3>Debate Results</h3>
+                <div id="debate-json" class="result-json"></div>
             </div>
         </div>
     </div>
@@ -892,6 +959,73 @@
                 });
             }
 
+            // Handle debate results (rounds and transcript)
+            if (data.rounds && data.rounds.length > 0) {
+                html += '<h4>⚔️ Debate Rounds & Transcript</h4>';
+
+                data.rounds.forEach((round, roundIndex) => {
+                    html += `<div style="margin-bottom: 25px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">`;
+                    html += `<h5 style="color: #667eea; margin: 0 0 15px 0;">Round ${round.round_number}</h5>`;
+
+                    round.messages.forEach((message, msgIndex) => {
+                        if (message.error === 'agent_unavailable') {
+                            html += `<div style="margin-bottom: 10px; padding: 10px; background: rgba(255,0,0,0.1); border-left: 3px solid #ff6b6b; border-radius: 4px;">`;
+                            html += `<strong style="color: #ff6b6b;">${message.agent}:</strong> ${message.message}`;
+                            html += `</div>`;
+                        } else {
+                            const agentIcon = msgIndex === 0 ? '🤖' : msgIndex === 1 ? '🧠' : '🎯';
+                            html += `<div style="margin-bottom: 15px; padding: 12px; background: rgba(255,255,255,0.03); border-left: 3px solid #667eea; border-radius: 6px;">`;
+                            html += `<strong style="color: #667eea;">${agentIcon} ${message.agent}</strong>`;
+                            if (message.role) {
+                                html += `<small style="color: #a0aec0; margin-left: 10px;">(${message.role})</small>`;
+                            }
+                            html += `<div style="margin-top: 8px; line-height: 1.6;">${message.message.replace(/\n/g, '<br>')}</div>`;
+                            if (message.response_time) {
+                                html += `<small style="color: #a0aec0;">Response time: ${message.response_time.toFixed(2)}s</small>`;
+                            }
+                            html += `</div>`;
+                        }
+                    });
+
+                    html += `</div>`;
+                });
+
+                // Show final summary if available
+                if (data.final_summary && data.final_summary.summary_text) {
+                    html += '<h4>📋 Final Debate Summary</h4>';
+                    html += `<div style="padding: 15px; background: rgba(102, 126, 234, 0.1); border-left: 4px solid #667eea; border-radius: 8px;">`;
+                    html += `<strong>Summarized by:</strong> ${data.final_summary.summarizer_agent || 'AI Judge'}<br><br>`;
+                    html += `${data.final_summary.summary_text.replace(/\n/g, '<br>')}`;
+
+                    // Show absolute truth verification if available
+                    if (data.final_summary.absolute_truth_verdict) {
+                        html += `<br><br><strong style="color: #ff6b6b;">🔍 Absolute Truth Verification:</strong> ${data.final_summary.absolute_truth_verdict.replace(/_/g, ' ')}`;
+                        if (data.final_summary.verification_result) {
+                            const conf = data.final_summary.verification_result.consensus?.confidence;
+                            if (conf) {
+                                html += ` (${(conf * 100).toFixed(1)}% confidence)`;
+                            }
+                        }
+                    }
+
+                    html += `</div>`;
+                }
+
+                // Show debate statistics
+                html += '<h4>📊 Debate Statistics</h4>';
+                html += `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">`;
+                html += `<div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 6px; text-align: center;">`;
+                html += `<strong style="color: #667eea;">${data.total_rounds}</strong><br><small>Rounds</small>`;
+                html += `</div>`;
+                html += `<div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 6px; text-align: center;">`;
+                html += `<strong style="color: #667eea;">${data.total_messages}</strong><br><small>Messages</small>`;
+                html += `</div>`;
+                html += `<div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 6px; text-align: center;">`;
+                html += `<strong style="color: #667eea;">${data.total_response_time ? data.total_response_time.toFixed(1) : '0.0'}s</strong><br><small>Total Time</small>`;
+                html += `</div>`;
+                html += `</div>`;
+            }
+
             // Raw JSON (collapsible)
             html += '<details style="margin-top: 20px;">';
             html += '<summary style="cursor: pointer; font-weight: bold;">View Raw JSON Response</summary>';
@@ -908,12 +1042,14 @@
             form.addEventListener("submit", async (e) => {
                 e.preventDefault();
 
-                const inputField = form.querySelector("textarea[name='query'], textarea[name='prompt']");
+                const inputField = form.querySelector("textarea[name='query'], textarea[name='prompt'], textarea[name='topic']");
                 const live = form.querySelector("#live-mode").checked;
+                const absoluteTruth = form.querySelector("#absolute-truth-mode").checked;
+                const rounds = form.id === "debate-form" ? form.querySelector("#debate-rounds").value : undefined;
 
                 if (!inputField || !inputField.value.trim()) {
                     const statusEl = form.parentElement.querySelector(".status");
-                    statusEl.textContent = "Please enter a query or prompt.";
+                    statusEl.textContent = "Please enter a query, prompt, or debate topic.";
                     statusEl.className = "status error";
                     statusEl.style.display = "block";
                     return;
@@ -922,13 +1058,17 @@
                 const payload = {
                     query: inputField.name === 'query' ? inputField.value : undefined,
                     prompt: inputField.name === 'prompt' ? inputField.value : undefined,
-                    live: live
+                    topic: inputField.name === 'topic' ? inputField.value : undefined,
+                    live: live,
+                    absolute_truth: absoluteTruth,
+                    rounds: rounds
                 };
 
                 let endpoint = "";
                 if(form.id === "verify-form") endpoint = "/verify";
                 else if(form.id === "triangulate-form") endpoint = "/triangulate";
                 else if(form.id === "brainstorm-form") endpoint = "/brainstorm";
+                else if(form.id === "debate-form") endpoint = "/debate";
 
                 const submitBtn = form.querySelector("button[type='submit']");
                 const originalText = submitBtn.textContent;

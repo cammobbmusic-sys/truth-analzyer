@@ -9,6 +9,8 @@ from orchestrator.pipelines.triangulation_orchestrator import TriangulationOrche
 
 from orchestrator.pipelines.brainstorm_orchestrator import BrainstormOrchestrator
 
+from orchestrator.pipelines.debate_orchestrator import DebateOrchestrator
+
 from agents.adapters.groq_adapter import GroqAdapter
 from agents.adapters.openrouter_adapter import OpenRouterAdapter
 from agents.adapters.cohere_adapter import CohereAdapter
@@ -168,7 +170,9 @@ def verify():
 
     live = request.json.get("live", False)
 
-    pipeline = VerificationPipeline(similarity_threshold=0.75)
+    absolute_truth = request.json.get("absolute_truth", False)
+
+    pipeline = VerificationPipeline(similarity_threshold=0.75, absolute_truth_mode=absolute_truth)
 
 
 
@@ -188,7 +192,7 @@ def verify():
         # Create specialized agents with role-specific prompts
         specialized_agents = [SpecializedAgent(agent, query) for agent in agents]
 
-        report = pipeline.run(text=query, agent_instances=specialized_agents, dry_run=False)
+        report = pipeline.run(text=query, agent_instances=specialized_agents, dry_run=False, absolute_truth_mode=absolute_truth)
 
     else:
 
@@ -196,7 +200,7 @@ def verify():
 
         agent_configs = conf.models[:3]
 
-        report = pipeline.run(text=query, agent_configs=agent_configs, dry_run=True)
+        report = pipeline.run(text=query, agent_configs=agent_configs, dry_run=True, absolute_truth_mode=absolute_truth)
 
 
 
@@ -266,6 +270,36 @@ def brainstorm():
 
     return jsonify(report)
 
+
+
+@app.route("/debate", methods=["POST"])
+def debate():
+    topic = request.json.get("topic", "")
+    live = request.json.get("live", False)
+    rounds = request.json.get("rounds", 3)
+    absolute_truth = request.json.get("absolute_truth", False)
+
+    debater = DebateOrchestrator(max_rounds=rounds, absolute_truth_mode=absolute_truth)
+
+    if live:
+        # Use mixed real agents
+        agents = create_mixed_agents()
+
+        # Ensure we have at least 3 agents, pad with duplicates if needed
+        while len(agents) < 3:
+            agents.append(agents[0])  # Duplicate first agent if needed
+
+        agents = agents[:3]  # Take first 3 agents
+
+        report = debater.run(topic=topic, agent_instances=agents, dry_run=False, absolute_truth_mode=absolute_truth)
+
+    else:
+        # Safe simulation
+        agent_configs = conf.models[:3]
+
+        report = debater.run(topic=topic, agent_configs=agent_configs, dry_run=True, absolute_truth_mode=absolute_truth)
+
+    return jsonify(report)
 
 
 if __name__ == "__main__":

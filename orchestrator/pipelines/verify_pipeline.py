@@ -69,11 +69,17 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 class VerificationPipeline:
-    def __init__(self, similarity_threshold: float = 0.75):
+    def __init__(self, similarity_threshold: float = 0.75, absolute_truth_mode: bool = False):
         """
         similarity_threshold: cosine similarity threshold to consider two agent outputs as 'agreeing'
+        absolute_truth_mode: if True, requires unanimous agreement with very high confidence for truth claims
         """
         self.similarity_threshold = float(similarity_threshold)
+        self.absolute_truth_mode = absolute_truth_mode
+
+        # In absolute truth mode, use much stricter thresholds
+        if absolute_truth_mode:
+            self.similarity_threshold = 0.95  # Require near-identical responses
 
     def _instantiate_agents(self, agent_configs: List[Dict[str, Any]]):
         """
@@ -187,7 +193,7 @@ class VerificationPipeline:
                 mat[i][j] = float(sim)
         return mat
 
-    def _consensus_from_matrix(self, mat: List[List[float]], threshold: float):
+    def _consensus_from_matrix(self, mat: List[List[float]], threshold: float, absolute_truth_mode: bool = False):
         """
         Determine consensus clusters given pairwise similarity matrix and threshold.
         Simple algorithm for 3 agents: majority rule.
@@ -207,36 +213,61 @@ class VerificationPipeline:
                     pairs.append((i, j, mat[i][j]))
         # majority logic for 3 agents:
         if n == 3:
-            # if any agent pair agrees, check if there is a majority: an agent that agrees with both others means consensus
-            agrees = [0] * 3
-            for (i, j, s) in pairs:
-                agrees[i] += 1
-                agrees[j] += 1
-            # check if any agent has agrees >=2 (agrees with both others)
-            majority = any(a >= 2 for a in agrees)
-            if majority:
-                # compute confidence as mean of pair sims that met threshold
-                conf_vals = [p[2] for p in pairs] or []
-                confidence = float(sum(conf_vals) / len(conf_vals)) if conf_vals else 0.0
-                return {'verdict': 'consensus', 'supporting_pairs': pairs, 'confidence': confidence}
-            elif len(pairs) >= 1:
-                # at least one pair agrees but no majority (two agents agree but not transitive)
-                confidence = float(sum(p[2] for p in pairs) / len(pairs)) if pairs else 0.0
-                return {'verdict': 'partial_agreement', 'supporting_pairs': pairs, 'confidence': confidence}
+            if absolute_truth_mode:
+                # ABSOLUTE TRUTH MODE: Require unanimous agreement (all pairs agree) with very high confidence
+                if len(pairs) == 3:  # All three pairs must agree (unanimous)
+                    conf_vals = [p[2] for p in pairs]
+                    confidence = float(sum(conf_vals) / len(conf_vals))
+                    if confidence >= 0.98:  # Require 98% confidence for absolute truth
+                        return {'verdict': 'absolute_truth', 'supporting_pairs': pairs, 'confidence': confidence}
+                    else:
+                        return {'verdict': 'high_confidence_agreement', 'supporting_pairs': pairs, 'confidence': confidence}
+                else:
+                    return {'verdict': 'insufficient_evidence', 'supporting_pairs': pairs, 'confidence': 0.0}
             else:
-                return {'verdict': 'disagree', 'supporting_pairs': [], 'confidence': 0.0}
+                # Standard mode
+                agrees = [0] * 3
+                for (i, j, s) in pairs:
+                    agrees[i] += 1
+                    agrees[j] += 1
+                # check if any agent has agrees >=2 (agrees with both others)
+                majority = any(a >= 2 for a in agrees)
+                if majority:
+                    # compute confidence as mean of pair sims that met threshold
+                    conf_vals = [p[2] for p in pairs] or []
+                    confidence = float(sum(conf_vals) / len(conf_vals)) if conf_vals else 0.0
+                    return {'verdict': 'consensus', 'supporting_pairs': pairs, 'confidence': confidence}
+                elif len(pairs) >= 1:
+                    # at least one pair agrees but no majority (two agents agree but not transitive)
+                    confidence = float(sum(p[2] for p in pairs) / len(pairs)) if pairs else 0.0
+                    return {'verdict': 'partial_agreement', 'supporting_pairs': pairs, 'confidence': confidence}
+                else:
+                    return {'verdict': 'disagree', 'supporting_pairs': [], 'confidence': 0.0}
         else:
-            # general heuristic: if more than half of pairs agree -> consensus
-            total_pairs = n * (n - 1) / 2
-            if total_pairs == 0:
-                return {'verdict': 'no_pairs', 'supporting_pairs': [], 'confidence': 0.0}
-            if len(pairs) >= (total_pairs / 2):
-                confidence = float(sum(p[2] for p in pairs) / len(pairs)) if pairs else 0.0
-                return {'verdict': 'consensus', 'supporting_pairs': pairs, 'confidence': confidence}
-            elif pairs:
-                return {'verdict': 'partial_agreement', 'supporting_pairs': pairs, 'confidence': float(sum(p[2] for p in pairs) / len(pairs))}
+            if absolute_truth_mode:
+                # ABSOLUTE TRUTH MODE: Require ALL pairs to agree with very high confidence
+                total_pairs = n * (n - 1) / 2
+                if len(pairs) == total_pairs:  # All pairs must agree (unanimous)
+                    conf_vals = [p[2] for p in pairs]
+                    confidence = float(sum(conf_vals) / len(conf_vals))
+                    if confidence >= 0.98:  # Require 98% confidence for absolute truth
+                        return {'verdict': 'absolute_truth', 'supporting_pairs': pairs, 'confidence': confidence}
+                    else:
+                        return {'verdict': 'high_confidence_agreement', 'supporting_pairs': pairs, 'confidence': confidence}
+                else:
+                    return {'verdict': 'insufficient_evidence', 'supporting_pairs': pairs, 'confidence': 0.0}
             else:
-                return {'verdict': 'disagree', 'supporting_pairs': [], 'confidence': 0.0}
+                # general heuristic: if more than half of pairs agree -> consensus
+                total_pairs = n * (n - 1) / 2
+                if total_pairs == 0:
+                    return {'verdict': 'no_pairs', 'supporting_pairs': [], 'confidence': 0.0}
+                if len(pairs) >= (total_pairs / 2):
+                    confidence = float(sum(p[2] for p in pairs) / len(pairs)) if pairs else 0.0
+                    return {'verdict': 'consensus', 'supporting_pairs': pairs, 'confidence': confidence}
+                elif pairs:
+                    return {'verdict': 'partial_agreement', 'supporting_pairs': pairs, 'confidence': float(sum(p[2] for p in pairs) / len(pairs))}
+                else:
+                    return {'verdict': 'disagree', 'supporting_pairs': [], 'confidence': 0.0}
 
     def run(self,
             text: str,
@@ -244,7 +275,8 @@ class VerificationPipeline:
             agent_instances: Optional[List[Any]] = None,
             orchestrator = None,
             dry_run: bool = True,
-            timeout: Optional[int] = None) -> Dict[str, Any]:
+            timeout: Optional[int] = None,
+            absolute_truth_mode: bool = False) -> Dict[str, Any]:
         """
         Main entrypoint.
         - text: the input to verify
@@ -284,7 +316,7 @@ class VerificationPipeline:
         sim_matrix = self._pairwise_similarity_matrix(texts)
 
         # Derive consensus
-        consensus = self._consensus_from_matrix(sim_matrix, self.similarity_threshold)
+        consensus = self._consensus_from_matrix(sim_matrix, self.similarity_threshold, self.absolute_truth_mode)
 
         # Build structured report
         report = {
@@ -311,7 +343,10 @@ class VerificationPipeline:
             'consensus': 'accepted_by_majority',
             'partial_agreement': 'partial_agreement_detected',
             'disagree': 'no_agreement_detected',
-            'no_agents': 'no_agents_provided'
+            'no_agents': 'no_agents_provided',
+            'absolute_truth': 'absolute_truth_confirmed',
+            'high_confidence_agreement': 'high_confidence_agreement',
+            'insufficient_evidence': 'insufficient_evidence_for_truth'
         }
         report['verdict'] = verdict_map.get(consensus.get('verdict'), 'unknown')
         return report

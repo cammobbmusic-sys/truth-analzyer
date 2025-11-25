@@ -91,88 +91,26 @@ class TriangulationOrchestrator:
         while len(agents) < 3:
             agents.append(None)
 
-        reports = []
-        start_times = {}  # Track start times for performance measurement
+        # Run comprehensive verification with all agents
+        retry_count = 0
+        report = None
 
-        for idx, agent in enumerate(agents):
-            retry_count = 0
-            agent_report = None
-
-            # Get agent name for tracking
-            agent_name = getattr(agent, 'name', f'agent_{idx}')
-            start_times[agent_name] = time.time()
-
-            while retry_count <= self.max_retries:
-                if self.verifier:
-                    agent_report = self.verifier.run(
-                        text=text,
-                        agent_instances=[agent],
-                        dry_run=dry_run
-                    )
-                else:
-                    agent_report = {'text': '[SIMULATED]', 'error': None, 'meta': {'simulated': True}}
-                confidence = agent_report.get('consensus', {}).get('confidence', 0)
-                if confidence >= self.similarity_threshold or retry_count == self.max_retries:
-                    break
-                retry_count += 1
-            agent_report['retries'] = retry_count
-            reports.append(agent_report)
-
-            # Comprehensive evaluation and performance tracking
-            if evaluator and agent_name in start_times:
-                end_time = time.time()
-                response_time = end_time - start_times[agent_name]
-
-                # Extract response data
-                agent_data = agent_report.get('agents', [{}])[0]
-                actual_output = agent_data.get('output', '')
-                success = agent_data.get('error') is None
-
-                # Determine evaluation genre based on query content
-                genre = self._classify_query_genre(text)
-
-                # Create comprehensive evaluation result
-                evaluation_result = EvaluationResult(
-                    evaluation_id=f"{agent_name}_{int(time.time())}_{hash(text) % 1000}",
-                    model_name=agent_name,
-                    genre=genre,
-                    task_description=f"Query: {text[:100]}{'...' if len(text) > 100 else ''}",
-                    input_text=text,
-                    actual_output=actual_output,
-                    processing_time=response_time,
-                    success=success
+        while retry_count <= self.max_retries:
+            if self.verifier:
+                report = self.verifier.run(
+                    text=text,
+                    agent_instances=agents,
+                    dry_run=dry_run
                 )
+            else:
+                report = {'error': 'no_verifier', 'dry_run': dry_run}
 
-                # Calculate evaluation metrics
-                evaluation_result.metrics = self._calculate_evaluation_metrics(
-                    evaluation_result, agent_report
-                )
+            confidence = report.get('consensus', {}).get('confidence', 0)
+            if confidence >= self.similarity_threshold or retry_count == self.max_retries:
+                break
+            retry_count += 1
 
-                # Add to evaluation framework
-                evaluator.results.append(evaluation_result)
-
-                # Check for performance anomalies
-                evaluator._check_for_anomalies(evaluation_result)
-
-                # Legacy optimizer tracking (for backward compatibility)
-                if optimizer:
-                    confidence = evaluation_result.metrics.get('accuracy', 0.5)
-                    query_type = genre.value
-                    estimated_cost = 0.001 if 'openrouter' in agent_name.lower() else 0.0005
-                    optimizer.track_performance(agent_name, response_time, confidence, success, query_type, estimated_cost)
-
-                # Auto-save evaluation data
-                if evaluator:
-                    evaluator.save_data()
-
-        # Compute aggregated consensus across all agents
-        final_texts = [r.get('agents', [{}])[0].get('output', '[SIMULATED]') for r in reports]
-        if self.verifier:
-            pairwise_matrix = self.verifier._pairwise_similarity_matrix(final_texts)
-            consensus = self.verifier._consensus_from_matrix(pairwise_matrix, self.similarity_threshold)
-        else:
-            pairwise_matrix = []
-            consensus = {'verdict': 'simulated', 'supporting_pairs': [], 'confidence': 1.0}
+        report['retries'] = retry_count
 
         # Get optimization insights
         optimization_insights = {}
@@ -203,16 +141,10 @@ class TriangulationOrchestrator:
                 'total_queries_tracked': sum(m.total_queries for m in optimizer.metrics.values())
             }
 
-        final_report = {
-            'input': text,
-            'agents_count': len(agents),
-            'agent_reports': reports,
-            'pairwise_similarity': pairwise_matrix,
-            'consensus': consensus,
-            'verdict': consensus.get('verdict', 'unknown'),
-            'dry_run': dry_run,
-            'optimization_insights': optimization_insights
-        }
+        # Add optimization insights to the report
+        report['optimization_insights'] = optimization_insights
+
+        return report
 
         return final_report
 
