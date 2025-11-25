@@ -19,11 +19,20 @@ try:
 except Exception:
     create_agent = None
 
-# Performance optimizer integration
+# Performance optimizer and evaluation integration
 try:
     from optimizer import optimizer
 except Exception:
     optimizer = None
+
+try:
+    from evaluation_framework import evaluator, EvaluationResult, EvaluationGenre
+    from evaluation_tasks import task_library
+except Exception:
+    evaluator = None
+    EvaluationResult = None
+    EvaluationGenre = None
+    task_library = None
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -109,29 +118,52 @@ class TriangulationOrchestrator:
             agent_report['retries'] = retry_count
             reports.append(agent_report)
 
-            # Performance tracking
-            if optimizer and agent_name in start_times:
+            # Comprehensive evaluation and performance tracking
+            if evaluator and agent_name in start_times:
                 end_time = time.time()
                 response_time = end_time - start_times[agent_name]
 
-                # Extract performance metrics
-                success = agent_report.get('agents', [{}])[0].get('error') is None
-                confidence = agent_report.get('consensus', {}).get('confidence', 0.5)
+                # Extract response data
+                agent_data = agent_report.get('agents', [{}])[0]
+                actual_output = agent_data.get('output', '')
+                success = agent_data.get('error') is None
 
-                # Categorize query type (simple heuristic)
-                query_lower = text.lower()
-                if any(word in query_lower for word in ['what', 'who', 'when', 'where', 'how many']):
-                    query_type = 'factual'
-                elif any(word in query_lower for word in ['explain', 'analyze', 'compare']):
-                    query_type = 'analytical'
-                elif any(word in query_lower for word in ['create', 'generate', 'design']):
-                    query_type = 'creative'
-                else:
-                    query_type = 'general'
+                # Determine evaluation genre based on query content
+                genre = self._classify_query_genre(text)
 
-                # Track performance (cost estimation - this would need real cost data)
-                estimated_cost = 0.001 if 'openrouter' in agent_name.lower() else 0.0005  # Rough estimates
-                optimizer.track_performance(agent_name, response_time, confidence, success, query_type, estimated_cost)
+                # Create comprehensive evaluation result
+                evaluation_result = EvaluationResult(
+                    evaluation_id=f"{agent_name}_{int(time.time())}_{hash(text) % 1000}",
+                    model_name=agent_name,
+                    genre=genre,
+                    task_description=f"Query: {text[:100]}{'...' if len(text) > 100 else ''}",
+                    input_text=text,
+                    actual_output=actual_output,
+                    processing_time=response_time,
+                    success=success
+                )
+
+                # Calculate evaluation metrics
+                evaluation_result.metrics = self._calculate_evaluation_metrics(
+                    evaluation_result, agent_report
+                )
+
+                # Add to evaluation framework
+                evaluator.results.append(evaluation_result)
+
+                # Check for performance anomalies
+                evaluator._check_for_anomalies(evaluation_result)
+
+                # Legacy optimizer tracking (for backward compatibility)
+                if optimizer:
+                    confidence = evaluation_result.metrics.get('accuracy', 0.5)
+                    query_type = genre.value
+                    estimated_cost = 0.001 if 'openrouter' in agent_name.lower() else 0.0005
+                    optimizer.track_performance(agent_name, response_time, confidence, success, query_type, estimated_cost)
+
+                # Auto-save evaluation data
+                if evaluator:
+                    evaluator.save_data()
 
         # Compute aggregated consensus across all agents
         final_texts = [r.get('agents', [{}])[0].get('output', '[SIMULATED]') for r in reports]
@@ -183,3 +215,114 @@ class TriangulationOrchestrator:
         }
 
         return final_report
+
+    def _classify_query_genre(self, text: str) -> EvaluationGenre:
+        """Classify query into evaluation genre based on content analysis."""
+        text_lower = text.lower()
+
+        # Factual questions
+        if any(word in text_lower for word in ['what is', 'who is', 'when did', 'where is', 'how many', 'capital of']):
+            return EvaluationGenre.FACTUAL_QA
+
+        # Mathematical
+        elif any(word in text_lower for word in ['calculate', 'solve', 'equation', 'square root', 'derivative', '+', '-', '×', '÷']):
+            return EvaluationGenre.MATHEMATICAL
+
+        # Reasoning
+        elif any(word in text_lower for word in ['therefore', 'conclude', 'follows', 'logically', 'reasoning', 'if all', 'some are']):
+            return EvaluationGenre.REASONING
+
+        # Creative writing
+        elif any(word in text_lower for word in ['write a', 'compose', 'create a', 'haiku', 'story', 'poem', 'describe']):
+            return EvaluationGenre.CREATIVE_WRITING
+
+        # Code generation
+        elif any(word in text_lower for word in ['write a function', 'code for', 'implement', 'program', 'script']):
+            return EvaluationGenre.CODE_GENERATION
+
+        # Analysis
+        elif any(word in text_lower for word in ['analyze', 'compare', 'evaluate', 'assess', 'impact of']):
+            return EvaluationGenre.ANALYSIS
+
+        # Conversation
+        elif any(word in text_lower for word in ['hello', 'how are you', 'feeling', 'advice', 'help me']):
+            return EvaluationGenre.CONVERSATION
+
+        # Summarization
+        elif any(word in text_lower for word in ['summarize', 'summary of', 'in brief', 'key points']):
+            return EvaluationGenre.SUMMARIZATION
+
+        # Classification
+        elif any(word in text_lower for word in ['classify', 'category', 'type of', 'kind of']):
+            return EvaluationGenre.CLASSIFICATION
+
+        # Translation (basic detection)
+        elif any(word in text_lower for word in ['translate', 'translation', 'in spanish', 'in french', 'to german']):
+            return EvaluationGenre.TRANSLATION
+
+        # Default to analysis for complex queries
+        else:
+            return EvaluationGenre.ANALYSIS
+
+    def _calculate_evaluation_metrics(self, evaluation_result: 'EvaluationResult',
+                                    agent_report: Dict[str, Any]) -> Dict[str, Any]:
+        """Calculate comprehensive evaluation metrics for the result."""
+        metrics = {}
+
+        # Basic performance metrics
+        metrics['response_time'] = evaluation_result.processing_time
+
+        # Success metric
+        metrics['success'] = 1.0 if evaluation_result.success else 0.0
+
+        # Consensus-based accuracy (from agent report)
+        consensus = agent_report.get('consensus', {})
+        metrics['accuracy'] = consensus.get('confidence', 0.5)
+
+        # Response quality metrics (heuristic-based for now)
+        output = evaluation_result.actual_output
+        input_text = evaluation_result.input_text
+
+        # Relevance score (basic heuristic)
+        if output and len(output.strip()) > 10:
+            # Check if output seems relevant to input
+            input_words = set(input_text.lower().split())
+            output_words = set(output.lower().split())
+            overlap = len(input_words.intersection(output_words))
+            metrics['relevance'] = min(1.0, overlap / max(len(input_words), 1))
+        else:
+            metrics['relevance'] = 0.0
+
+        # Creativity score (for creative tasks)
+        if evaluation_result.genre in [EvaluationGenre.CREATIVE_WRITING, EvaluationGenre.CONVERSATION]:
+            # Basic creativity heuristics
+            unique_words = len(set(output.lower().split())) if output else 0
+            total_words = len(output.split()) if output else 0
+            metrics['creativity'] = min(1.0, unique_words / max(total_words, 1))
+        else:
+            metrics['creativity'] = 0.5  # Neutral for non-creative tasks
+
+        # Cost efficiency (placeholder - would need real cost data)
+        base_cost = 0.001 if 'openrouter' in evaluation_result.model_name.lower() else 0.0005
+        metrics['cost_efficiency'] = metrics['accuracy'] / max(base_cost, 0.0001)
+
+        # Genre-specific metrics
+        if evaluation_result.genre == EvaluationGenre.MATHEMATICAL:
+            # Check for numerical answers
+            import re
+            numbers = re.findall(r'\d+', output)
+            metrics['numerical_answer'] = 1.0 if numbers else 0.0
+
+        elif evaluation_result.genre == EvaluationGenre.CODE_GENERATION:
+            # Basic code quality checks
+            code_indicators = ['def ', 'class ', 'import ', 'function', 'return ']
+            code_score = sum(1 for indicator in code_indicators if indicator in output)
+            metrics['code_quality'] = min(1.0, code_score / 3)
+
+        elif evaluation_result.genre == EvaluationGenre.REASONING:
+            # Reasoning quality (basic heuristics)
+            reasoning_words = ['because', 'therefore', 'thus', 'consequently', 'follows']
+            reasoning_score = sum(1 for word in reasoning_words if word in output.lower())
+            metrics['logical_reasoning'] = min(1.0, reasoning_score / 2)
+
+        return metrics

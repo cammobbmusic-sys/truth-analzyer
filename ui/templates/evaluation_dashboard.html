@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Model Evaluation Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid #e1e8ed;
+        }
+
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #3498db;
+        }
+
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+            display: block;
+        }
+
+        .metric-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .performance-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .performance-table th,
+        .performance-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .performance-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .score-high { color: #27ae60; font-weight: bold; }
+        .score-medium { color: #f39c12; font-weight: bold; }
+        .score-low { color: #e74c3c; font-weight: bold; }
+
+        .comparison-section {
+            margin-top: 20px;
+        }
+
+        .model-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .model-selector select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: white;
+        }
+
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .notification-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            padding: 10px;
+            border-left: 4px solid #3498db;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .notification-item.high {
+            border-left-color: #e74c3c;
+        }
+
+        .notification-item.normal {
+            border-left-color: #27ae60;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .error {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Model Evaluation Dashboard</h1>
+            <p>Comprehensive Performance Analysis & Comparative Insights</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Evaluation Summary -->
+            <div class="card">
+                <h3>📊 Evaluation Summary</h3>
+                <div id="evaluation-summary" class="loading">
+                    Loading evaluation data...
+                </div>
+            </div>
+
+            <!-- Model Performance -->
+            <div class="card">
+                <h3>🎯 Model Performance</h3>
+                <div id="model-performance" class="loading">
+                    Loading performance data...
+                </div>
+            </div>
+
+            <!-- Model Comparison -->
+            <div class="card">
+                <h3>⚖️ Model Comparison</h3>
+                <div class="comparison-section">
+                    <div class="model-selector">
+                        <select id="model-a">
+                            <option value="">Select Model A...</option>
+                        </select>
+                        <span>vs</span>
+                        <select id="model-b">
+                            <option value="">Select Model B...</option>
+                        </select>
+                        <button class="btn" onclick="compareModels()">Compare</button>
+                    </div>
+                    <div id="comparison-results" class="loading">
+                        Select two models to compare their performance across genres.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Evaluations -->
+            <div class="card">
+                <h3>📋 Recent Evaluations</h3>
+                <div id="recent-evaluations" class="loading">
+                    Loading recent evaluations...
+                </div>
+            </div>
+
+            <!-- Performance Chart -->
+            <div class="card">
+                <h3>📈 Performance Trends</h3>
+                <div class="model-selector">
+                    <select id="chart-model">
+                        <option value="">Select Model...</option>
+                    </select>
+                    <button class="btn" onclick="loadPerformanceChart()">Load Chart</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Notifications -->
+            <div class="card">
+                <h3>🔔 Recent Notifications</h3>
+                <div id="notifications" class="loading">
+                    Loading notifications...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let evaluationData = {};
+        let chartInstance = null;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadEvaluationSummary();
+            loadRecentEvaluations();
+            loadNotifications();
+        });
+
+        // Load evaluation summary
+        async function loadEvaluationSummary() {
+            try {
+                const response = await fetch('/api/evaluation_summary');
+                const data = await response.json();
+
+                evaluationData = data;
+
+                let html = `
+                    <div class="metric-grid">
+                        <div class="metric-card">
+                            <span class="metric-value">${data.total_evaluations}</span>
+                            <span class="metric-label">Total Evaluations</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-value">${(data.success_rate * 100).toFixed(1)}%</span>
+                            <span class="metric-label">Success Rate</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-value">${data.recent_evaluations}</span>
+                            <span class="metric-label">Recent (24h)</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-value">${data.models_evaluated.length}</span>
+                            <span class="metric-label">Models Tested</span>
+                        </div>
+                    </div>
+
+                    <h4>Model Performance Summary:</h4>
+                    <table class="performance-table">
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>Genres</th>
+                                <th>Avg Score</th>
+                                <th>Sample Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+                for (const [model, genres] of Object.entries(data.performance_summary)) {
+                    const totalGenres = Object.keys(genres).length;
+                    const avgScore = Object.values(genres).reduce((sum, g) => sum + g.average_score, 0) / totalGenres;
+                    const totalSamples = Object.values(genres).reduce((sum, g) => sum + g.sample_size, 0);
+
+                    const scoreClass = avgScore > 0.8 ? 'score-high' :
+                                     avgScore > 0.6 ? 'score-medium' : 'score-low';
+
+                    html += `
+                        <tr>
+                            <td>${model}</td>
+                            <td>${totalGenres}</td>
+                            <td class="${scoreClass}">${avgScore.toFixed(3)}</td>
+                            <td>${totalSamples}</td>
+                        </tr>`;
+                }
+
+                html += `
+                        </tbody>
+                    </table>
+
+                    <h4>Recommendations:</h4>
+                    <ul>`;
+                data.recommendations.forEach(rec => {
+                    html += `<li><strong>${rec.recommended_model}</strong> recommended for ${rec.genre} tasks</li>`;
+                });
+                html += '</ul>';
+
+                document.getElementById('evaluation-summary').innerHTML = html;
+
+                // Populate model selectors
+                populateModelSelectors(data.models_evaluated);
+
+            } catch (error) {
+                document.getElementById('evaluation-summary').innerHTML =
+                    `<div class="error">Error loading evaluation summary: ${error.message}</div>`;
+            }
+        }
+
+        // Load recent evaluations
+        async function loadRecentEvaluations() {
+            try {
+                const response = await fetch('/api/recent_evaluations/10');
+                const data = await response.json();
+
+                let html = '<table class="performance-table"><thead><tr><th>Model</th><th>Genre</th><th>Score</th><th>Time</th><th>Status</th></tr></thead><tbody>';
+
+                data.evaluations.forEach(eval => {
+                    const scoreClass = eval.overall_score > 0.8 ? 'score-high' :
+                                     eval.overall_score > 0.6 ? 'score-medium' : 'score-low';
+                    const statusIcon = eval.success ? '✅' : '❌';
+
+                    html += `
+                        <tr>
+                            <td>${eval.model_name}</td>
+                            <td>${eval.genre}</td>
+                            <td class="${scoreClass}">${eval.overall_score.toFixed(3)}</td>
+                            <td>${eval.processing_time.toFixed(2)}s</td>
+                            <td>${statusIcon}</td>
+                        </tr>`;
+                });
+
+                html += '</tbody></table>';
+                document.getElementById('recent-evaluations').innerHTML = html;
+
+            } catch (error) {
+                document.getElementById('recent-evaluations').innerHTML =
+                    `<div class="error">Error loading recent evaluations: ${error.message}</div>`;
+            }
+        }
+
+        // Load notifications
+        async function loadNotifications() {
+            try {
+                const response = await fetch('/api/notifications');
+                const data = await response.json();
+
+                let html = '<div class="notification-list">';
+
+                if (data.notifications.length === 0) {
+                    html += '<p>No recent notifications.</p>';
+                } else {
+                    data.notifications.forEach(notification => {
+                        const priorityClass = notification.priority || 'normal';
+                        html += `
+                            <div class="notification-item ${priorityClass}">
+                                <strong>${notification.title}</strong>
+                                <p>${notification.message}</p>
+                                <small>${new Date(notification.timestamp).toLocaleString()}</small>
+                            </div>`;
+                    });
+                }
+
+                html += '</div>';
+                document.getElementById('notifications').innerHTML = html;
+
+            } catch (error) {
+                document.getElementById('notifications').innerHTML =
+                    `<div class="error">Error loading notifications: ${error.message}</div>`;
+            }
+        }
+
+        // Compare models
+        async function compareModels() {
+            const modelA = document.getElementById('model-a').value;
+            const modelB = document.getElementById('model-b').value;
+
+            if (!modelA || !modelB) {
+                alert('Please select both models to compare.');
+                return;
+            }
+
+            if (modelA === modelB) {
+                alert('Please select different models to compare.');
+                return;
+            }
+
+            try {
+                document.getElementById('comparison-results').innerHTML = 'Loading comparison...';
+
+                const response = await fetch(`/api/model_comparison/${modelA}/${modelB}`);
+                const data = await response.json();
+
+                let html = `<h4>Comparing ${modelA} vs ${modelB}</h4>`;
+
+                if (Object.keys(data.comparisons).length === 0) {
+                    html += '<p>No comparison data available for these models.</p>';
+                } else {
+                    for (const [genre, comparison] of Object.entries(data.comparisons)) {
+                        const winner = comparison.winner;
+                        const diff = comparison.score_difference;
+
+                        html += `
+                            <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                                <h5>${genre.replace('_', ' ').toUpperCase()}</h5>
+                                <p><strong>Winner:</strong> ${winner} (${diff.toFixed(3)} difference)</p>
+                                <small>${modelA}: ${comparison.comparison[modelA].mean_score.toFixed(3)} |
+                                       ${modelB}: ${comparison.comparison[modelB].mean_score.toFixed(3)}</small>
+                            </div>`;
+                    }
+                }
+
+                document.getElementById('comparison-results').innerHTML = html;
+
+            } catch (error) {
+                document.getElementById('comparison-results').innerHTML =
+                    `<div class="error">Error comparing models: ${error.message}</div>`;
+            }
+        }
+
+        // Load performance chart
+        async function loadPerformanceChart() {
+            const model = document.getElementById('chart-model').value;
+
+            if (!model) {
+                alert('Please select a model to view its performance chart.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/performance_chart/${model}`);
+                const data = await response.json();
+
+                // Destroy existing chart
+                if (chartInstance) {
+                    chartInstance.destroy();
+                }
+
+                const ctx = document.getElementById('performanceChart').getContext('2d');
+                chartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: `${model} Performance Score`,
+                            data: data.scores,
+                            borderColor: 'rgb(52, 152, 219)',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 1.0
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: `${model} Performance Trend (Avg: ${data.average_score.toFixed(3)})`
+                            }
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error loading performance chart:', error);
+                alert('Error loading performance chart. Check console for details.');
+            }
+        }
+
+        // Populate model selectors
+        function populateModelSelectors(models) {
+            const selectors = ['model-a', 'model-b', 'chart-model'];
+
+            selectors.forEach(selectorId => {
+                const selector = document.getElementById(selectorId);
+                selector.innerHTML = '<option value="">Select Model...</option>';
+
+                models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model;
+                    option.textContent = model;
+                    selector.appendChild(option);
+                });
+            });
+        }
+
+        // Auto-refresh data every 30 seconds
+        setInterval(() => {
+            loadEvaluationSummary();
+            loadRecentEvaluations();
+            loadNotifications();
+        }, 30000);
+    </script>
+</body>
+</html>
