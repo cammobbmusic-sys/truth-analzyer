@@ -1,6 +1,9 @@
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import Config
 
 from orchestrator.pipelines.verify_pipeline import VerificationPipeline
@@ -10,6 +13,7 @@ from orchestrator.pipelines.triangulation_orchestrator import TriangulationOrche
 from orchestrator.pipelines.brainstorm_orchestrator import BrainstormOrchestrator
 
 from orchestrator.pipelines.debate_orchestrator import DebateOrchestrator
+from optimized_orchestrator import OptimizedDebateOrchestrator
 
 from agents.adapters.groq_adapter import GroqAdapter
 from agents.adapters.openrouter_adapter import OpenRouterAdapter
@@ -145,6 +149,18 @@ class SpecializedAgent:
         """Delegate other attributes to the base agent."""
         return getattr(self.base_agent, name)
 
+    def run(self, *args, **kwargs):
+        """Run the specialized agent."""
+        pass
+
+    def analyze(self, *args, **kwargs):
+        """Analyze using the specialized agent."""
+        pass
+
+    def process(self, *args, **kwargs):
+        """Process input using the specialized agent."""
+        pass
+
 
 def create_groq_agent(name="groq-agent"):
     """Factory for a live Groq agent (backward compatibility)."""
@@ -163,143 +179,214 @@ def index():
 
 
 @app.route("/verify", methods=["POST"])
-
 def verify():
+    try:
+        query = request.json.get("query")
+        live = request.json.get("live", False)
+        absolute_truth = request.json.get("absolute_truth", False)
 
-    query = request.json.get("query")
+        pipeline = VerificationPipeline(similarity_threshold=0.75, absolute_truth_mode=absolute_truth)
 
-    live = request.json.get("live", False)
+        if live:
+            try:
+                # Use mixed real agents (Groq, OpenRouter, Cohere)
+                agents = create_mixed_agents()
 
-    absolute_truth = request.json.get("absolute_truth", False)
+                # Ensure we have at least 3 agents, pad with duplicates if needed
+                while len(agents) < 3:
+                    agents.append(agents[0])  # Duplicate first agent if needed
 
-    pipeline = VerificationPipeline(similarity_threshold=0.75, absolute_truth_mode=absolute_truth)
+                agents = agents[:3]  # Take first 3 agents
 
+                # Create specialized agents with role-specific prompts
+                specialized_agents = [SpecializedAgent(agent, query) for agent in agents]
 
+                report = pipeline.run(text=query, agent_instances=specialized_agents, dry_run=False, absolute_truth_mode=absolute_truth)
 
-    if live:
+            except RuntimeError as e:
+                if "API keys" in str(e):
+                    return jsonify({
+                        "error": "missing_api_keys",
+                        "message": "Live API mode requires API keys. Please set GROQ_API_KEY, OPENROUTER_API_KEY, or COHERE_API_KEY environment variables.",
+                        "dry_run": False
+                    }), 400
+                else:
+                    return jsonify({
+                        "error": "agent_creation_failed",
+                        "message": f"Failed to create agents: {str(e)}",
+                        "dry_run": False
+                    }), 500
+        else:
+            # Safe simulation
+            agent_configs = conf.models[:3]
+            report = pipeline.run(text=query, agent_configs=agent_configs, dry_run=True, absolute_truth_mode=absolute_truth)
 
-        # Use mixed real agents (Groq, OpenRouter, Cohere)
+        return jsonify(report)
 
-        agents = create_mixed_agents()
-
-        # Ensure we have at least 3 agents, pad with duplicates if needed
-
-        while len(agents) < 3:
-            agents.append(agents[0])  # Duplicate first agent if needed
-
-        agents = agents[:3]  # Take first 3 agents
-
-        # Create specialized agents with role-specific prompts
-        specialized_agents = [SpecializedAgent(agent, query) for agent in agents]
-
-        report = pipeline.run(text=query, agent_instances=specialized_agents, dry_run=False, absolute_truth_mode=absolute_truth)
-
-    else:
-
-        # Safe simulation
-
-        agent_configs = conf.models[:3]
-
-        report = pipeline.run(text=query, agent_configs=agent_configs, dry_run=True, absolute_truth_mode=absolute_truth)
-
-
-
-    return jsonify(report)
+    except Exception as e:
+        return jsonify({
+            "error": "internal_error",
+            "message": f"An unexpected error occurred: {str(e)}",
+            "dry_run": request.json.get("live", False) == False
+        }), 500
 
 
 
 @app.route("/triangulate", methods=["POST"])
-
 def triangulate():
+    try:
+        query = request.json.get("query")
+        live = request.json.get("live", False)
 
-    query = request.json.get("query")
+        tri = TriangulationOrchestrator(max_agents=5, max_retries=2)
 
-    live = request.json.get("live", False)
+        if live:
+            try:
+                # Use mixed real agents (Groq, OpenRouter, Cohere)
+                agents = create_mixed_agents()
+                report = tri.run(text=query, agent_instances=agents, dry_run=False)
 
-    tri = TriangulationOrchestrator(max_agents=5, max_retries=2)
+            except RuntimeError as e:
+                if "API keys" in str(e):
+                    return jsonify({
+                        "error": "missing_api_keys",
+                        "message": "Live API mode requires API keys. Please set GROQ_API_KEY, OPENROUTER_API_KEY, or COHERE_API_KEY environment variables.",
+                        "dry_run": False
+                    }), 400
+                else:
+                    return jsonify({
+                        "error": "agent_creation_failed",
+                        "message": f"Failed to create agents: {str(e)}",
+                        "dry_run": False
+                    }), 500
+        else:
+            agent_configs = conf.models[:5]
+            report = tri.run(text=query, agent_configs=agent_configs, dry_run=True)
 
+        return jsonify(report)
 
-
-    if live:
-
-        # Use mixed real agents (Groq, OpenRouter, Cohere)
-
-        agents = create_mixed_agents()
-
-        report = tri.run(text=query, agent_instances=agents, dry_run=False)
-
-    else:
-
-        agent_configs = conf.models[:5]
-
-        report = tri.run(text=query, agent_configs=agent_configs, dry_run=True)
-
-
-
-    return jsonify(report)
+    except Exception as e:
+        return jsonify({
+            "error": "internal_error",
+            "message": f"An unexpected error occurred: {str(e)}",
+            "dry_run": request.json.get("live", False) == False
+        }), 500
 
 
 
 @app.route("/brainstorm", methods=["POST"])
-
 def brainstorm():
+    try:
+        prompt = request.json.get("prompt")
+        live = request.json.get("live", False)
 
-    prompt = request.json.get("prompt")
+        brainstormer = BrainstormOrchestrator(max_agents=5, dry_run=not live)
 
-    live = request.json.get("live", False)
+        if live:
+            try:
+                # Use mixed real agents (Groq, OpenRouter, Cohere)
+                agents = create_mixed_agents()
+                report = brainstormer.run(prompt=prompt, agent_instances=agents, run_verification=True)
 
-    brainstormer = BrainstormOrchestrator(max_agents=5, dry_run=not live)
+            except RuntimeError as e:
+                if "API keys" in str(e):
+                    return jsonify({
+                        "error": "missing_api_keys",
+                        "message": "Live API mode requires API keys. Please set GROQ_API_KEY, OPENROUTER_API_KEY, or COHERE_API_KEY environment variables.",
+                        "dry_run": False
+                    }), 400
+                else:
+                    return jsonify({
+                        "error": "agent_creation_failed",
+                        "message": f"Failed to create agents: {str(e)}",
+                        "dry_run": False
+                    }), 500
+        else:
+            agent_configs = conf.models[:5]
+            report = brainstormer.run(prompt=prompt, agent_configs=agent_configs, run_verification=False)
 
+        return jsonify(report)
 
-
-    if live:
-
-        # Use mixed real agents (Groq, OpenRouter, Cohere)
-
-        agents = create_mixed_agents()
-
-        report = brainstormer.run(prompt=prompt, agent_instances=agents, run_verification=True)
-
-    else:
-
-        agent_configs = conf.models[:5]
-
-        report = brainstormer.run(prompt=prompt, agent_configs=agent_configs, run_verification=False)
-
-
-
-    return jsonify(report)
+    except Exception as e:
+        return jsonify({
+            "error": "internal_error",
+            "message": f"An unexpected error occurred: {str(e)}",
+            "dry_run": request.json.get("live", False) == False
+        }), 500
 
 
 
 @app.route("/debate", methods=["POST"])
 def debate():
-    topic = request.json.get("topic", "")
-    live = request.json.get("live", False)
-    rounds = request.json.get("rounds", 3)
-    absolute_truth = request.json.get("absolute_truth", False)
+    try:
+        topic = request.json.get("topic", "")
+        live = request.json.get("live", False)
+        rounds = int(request.json.get("rounds", 3))
+        absolute_truth = request.json.get("absolute_truth", False)
+        use_cache = request.json.get("use_cache", False)  # New caching parameter
 
-    debater = DebateOrchestrator(max_rounds=rounds, absolute_truth_mode=absolute_truth)
+        # Use optimized orchestrator if caching is enabled
+        if use_cache:
+            optimized_debater = OptimizedDebateOrchestrator(
+                max_rounds=rounds,
+                absolute_truth_mode=absolute_truth,
+                use_cache=True
+            )
 
-    if live:
-        # Use mixed real agents
-        agents = create_mixed_agents()
+            # For optimized orchestrator, we use a simplified approach
+            # The caching logic is handled internally
+            result = optimized_debater.run_optimized_debate(topic)
 
-        # Ensure we have at least 3 agents, pad with duplicates if needed
-        while len(agents) < 3:
-            agents.append(agents[0])  # Duplicate first agent if needed
+            # Add metadata about caching
+            report = result["result"]
+            report["source"] = result["source"]  # CACHE or PIPELINE
+            report["cached"] = (result["source"] == "CACHE")
 
-        agents = agents[:3]  # Take first 3 agents
+            return jsonify(report)
 
-        report = debater.run(topic=topic, agent_instances=agents, dry_run=False, absolute_truth_mode=absolute_truth)
+        else:
+            debater = DebateOrchestrator(max_rounds=rounds, absolute_truth_mode=absolute_truth)
 
-    else:
-        # Safe simulation
-        agent_configs = conf.models[:3]
+        if live:
+            try:
+                # Use mixed real agents
+                agents = create_mixed_agents()
 
-        report = debater.run(topic=topic, agent_configs=agent_configs, dry_run=True, absolute_truth_mode=absolute_truth)
+                # Ensure we have at least 3 agents, pad with duplicates if needed
+                while len(agents) < 3:
+                    agents.append(agents[0])  # Duplicate first agent if needed
 
-    return jsonify(report)
+                agents = agents[:3]  # Take first 3 agents
+
+                report = debater.run(topic=topic, agent_instances=agents, dry_run=False, absolute_truth_mode=absolute_truth)
+
+            except RuntimeError as e:
+                if "API keys" in str(e):
+                    return jsonify({
+                        "error": "missing_api_keys",
+                        "message": "Live API mode requires API keys. Please set GROQ_API_KEY, OPENROUTER_API_KEY, or COHERE_API_KEY environment variables.",
+                        "dry_run": False
+                    }), 400
+                else:
+                    return jsonify({
+                        "error": "agent_creation_failed",
+                        "message": f"Failed to create agents: {str(e)}",
+                        "dry_run": False
+                    }), 500
+        else:
+            # Safe simulation
+            agent_configs = conf.models[:3]
+
+            report = debater.run(topic=topic, agent_configs=agent_configs, dry_run=True, absolute_truth_mode=absolute_truth)
+
+        return jsonify(report)
+
+    except Exception as e:
+        return jsonify({
+            "error": "internal_error",
+            "message": f"An unexpected error occurred: {str(e)}",
+            "dry_run": request.json.get("live", False) == False
+        }), 500
 
 
 if __name__ == "__main__":

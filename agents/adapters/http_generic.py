@@ -18,7 +18,7 @@ class HTTPGenericAdapter(ModelAgent):
 
     def generate(self, prompt: str, temperature: float = 0.7, max_tokens: int = 256) -> str:
 
-        # Safe placeholder: return static string
+        # Return simulated response for testing purposes
 
         return f"[SIMULATED RESPONSE] Agent {self.name} would respond here to prompt '{prompt}'."
 

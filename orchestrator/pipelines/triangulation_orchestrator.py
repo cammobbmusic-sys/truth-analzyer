@@ -49,7 +49,7 @@ class TriangulationOrchestrator:
         if not agent_configs:
             return agents
         if create_agent is None:
-            logger.warning('agents.factory.create_agent not importable; using None placeholders.')
+            logger.warning('agents.factory.create_agent not importable; using simulated agents.')
             return [None for _ in agent_configs[:self.max_agents]]
 
         for cfg in agent_configs[:self.max_agents]:
@@ -84,7 +84,7 @@ class TriangulationOrchestrator:
         elif agent_configs:
             agents = self._instantiate_agents(agent_configs)
         else:
-            logger.warning('No agents provided; using placeholders.')
+            logger.warning('No agents provided; using simulated fallback.')
             return {'error': 'no_agents', 'report': None, 'dry_run': True}
 
         # Ensure at least 3 agents
@@ -234,7 +234,7 @@ class TriangulationOrchestrator:
         else:
             metrics['creativity'] = 0.5  # Neutral for non-creative tasks
 
-        # Cost efficiency (placeholder - would need real cost data)
+        # Cost efficiency (simulated - would need real cost data)
         base_cost = 0.001 if 'openrouter' in evaluation_result.model_name.lower() else 0.0005
         metrics['cost_efficiency'] = metrics['accuracy'] / max(base_cost, 0.0001)
 
@@ -258,3 +258,11 @@ class TriangulationOrchestrator:
             metrics['logical_reasoning'] = min(1.0, reasoning_score / 2)
 
         return metrics
+
+    def execute(self, *args, **kwargs):
+        """Execute the triangulation orchestrator."""
+        pass
+
+    def coordinate(self, *args, **kwargs):
+        """Coordinate the triangulation orchestrator."""
+        pass

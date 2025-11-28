@@ -256,8 +256,9 @@ class EvaluationDashboard:
 
     def run(self, host: str = '0.0.0.0', port: int = 5001, debug: bool = True):
         """Run the evaluation dashboard."""
-        print("🚀 Starting AI Evaluation Dashboard..."        print(f"📊 Access at: http://{host}:{port}")
-        print("📈 Features: Real-time metrics, comparative analysis, performance tracking"
+        print("🚀 Starting AI Evaluation Dashboard...")
+        print(f"📊 Access at: http://{host}:{port}")
+        print("📈 Features: Real-time metrics, comparative analysis, performance tracking")
         self.app.run(host=host, port=port, debug=debug)
 
 

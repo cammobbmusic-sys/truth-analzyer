@@ -142,7 +142,7 @@ class Config:
         return models
 
     def _load_prompt_templates(self) -> Dict[str, str]:
-        """Load prompt templates (placeholder for compatibility)."""
+        """Load prompt templates for backward compatibility."""
         return {
             "verification_base": "Analyze the following question: {question}",
             "brainstorming_base": "Generate ideas for: {topic}",

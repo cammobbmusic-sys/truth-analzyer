@@ -55,7 +55,7 @@ if 'rounds' in result and result['rounds']:
                 if message.get('role'):
                     role_indicator = f" ({message['role'].replace('_', ' ')})"
                 msg_text = message.get('message', 'No message')
-                print(f"🤖 {message.get('agent', 'Unknown')}{role_indicator}: {msg_text[:150]}{'...' if len(msg_text) > 150 else ''}")
+                print(f"[AI] {message.get('agent', 'Unknown')}{role_indicator}: {msg_text[:150]}{'...' if len(msg_text) > 150 else ''}")
 else:
     print("\n=== DEBATE TRANSCRIPT ===")
     print("❌ No debate rounds available - agents may have failed to initialize")

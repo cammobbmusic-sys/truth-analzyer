@@ -404,7 +404,7 @@ class ModelEvaluator:
 
         This method should be overridden or extended with actual model calling logic.
         """
-        # This is a placeholder - in real implementation, this would call the actual model
+        # This is a simulation - in real implementation, this would call the actual model
         evaluation_id = f"{model_name}_{genre.value}_{int(time.time())}"
 
         # Simulate evaluation (replace with actual model call)

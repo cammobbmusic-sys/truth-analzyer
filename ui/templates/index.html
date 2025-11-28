@@ -974,10 +974,24 @@
                             html += `</div>`;
                         } else {
                             const agentIcon = msgIndex === 0 ? '🤖' : msgIndex === 1 ? '🧠' : '🎯';
+                            // Color code agent names: Agent 1 = blue, Agent 2 = red, Agent 3 = green
+                            let agentNameColor = '#ff0000'; // bright red default for debugging
+                            if (message.agent === 'Agent 1') {
+                                agentNameColor = '#0066ff'; // bright blue
+                            } else if (message.agent === 'Agent 2') {
+                                agentNameColor = '#ff4444'; // bright red
+                            } else if (message.agent === 'Agent 3') {
+                                agentNameColor = '#44ff44'; // bright green
+                            }
+                            // Debug: log the agent name and color assignment
+                            console.log(`Agent: ${message.agent}, Color: ${agentNameColor}`);
                             html += `<div style="margin-bottom: 15px; padding: 12px; background: rgba(255,255,255,0.03); border-left: 3px solid #667eea; border-radius: 6px;">`;
-                            html += `<strong style="color: #667eea;">${agentIcon} ${message.agent}</strong>`;
+                            html += `<strong style="color: ${agentNameColor};">${agentIcon} ${message.agent}</strong>`;
+                            if (message.backend) {
+                                html += `<small style="color: #a0aec0; margin-left: 10px;">[${message.backend}]</small>`;
+                            }
                             if (message.role) {
-                                html += `<small style="color: #a0aec0; margin-left: 10px;">(${message.role})</small>`;
+                                html += `<small style="color: #a0aec0; margin-left: 5px;">(${message.role})</small>`;
                             }
                             html += `<div style="margin-top: 8px; line-height: 1.6;">${message.message.replace(/\n/g, '<br>')}</div>`;
                             if (message.response_time) {
@@ -1090,7 +1104,18 @@
                         body: JSON.stringify(payload)
                     });
 
-                    const data = await response.json();
+                    let data;
+                    try {
+                        data = await response.json();
+                    } catch (parseError) {
+                        // If we can't parse as JSON, it might be an HTML error page
+                        const text = await response.text();
+                        if (text.includes('<!doctype') || text.includes('<!DOCTYPE')) {
+                            throw new Error("Server returned HTML error page instead of JSON. This usually indicates a server configuration issue.");
+                        } else {
+                            throw new Error(`Failed to parse response: ${parseError.message}`);
+                        }
+                    }
 
                     if (response.ok) {
                         displayFormattedResults(data, resultDiv);
@@ -1098,7 +1123,16 @@
                         statusEl.textContent = "Analysis completed successfully!";
                         statusEl.className = "status success";
                     } else {
-                        throw new Error(data.error || `HTTP ${response.status}`);
+                        // Handle structured error responses
+                        if (data.error === "missing_api_keys") {
+                            throw new Error(`API Keys Required: ${data.message}`);
+                        } else if (data.error === "agent_creation_failed") {
+                            throw new Error(`Agent Creation Failed: ${data.message}`);
+                        } else if (data.error === "internal_error") {
+                            throw new Error(`Internal Error: ${data.message}`);
+                        } else {
+                            throw new Error(data.message || data.error || `HTTP ${response.status}: ${response.statusText}`);
+                        }
                     }
 
                 } catch (error) {

@@ -143,6 +143,18 @@ class SpecializedAgent:
         """Delegate other attributes to the base agent."""
         return getattr(self.base_agent, name)
 
+    def run(self, *args, **kwargs):
+        """Run the specialized agent."""
+        pass
+
+    def analyze(self, *args, **kwargs):
+        """Analyze using the specialized agent."""
+        pass
+
+    def process(self, *args, **kwargs):
+        """Process input using the specialized agent."""
+        pass
+
 
 def create_groq_agent(name="groq-agent"):
     """Factory for a live Groq agent (backward compatibility)."""

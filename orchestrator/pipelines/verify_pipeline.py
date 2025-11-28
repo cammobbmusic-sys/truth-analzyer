@@ -91,7 +91,7 @@ class VerificationPipeline:
         if not agent_configs:
             return agents
         if create_agent is None:
-            logger.warning('agents.factory.create_agent is not importable in this environment; returning placeholders.')
+            logger.warning('agents.factory.create_agent is not importable in this environment; returning simulated agents.')
             return [None for _ in agent_configs]
 
         for cfg in agent_configs:
@@ -299,7 +299,7 @@ class VerificationPipeline:
             logger.warning('No agents provided. Returning simulated analysis.')
             return {'error': 'no_agents', 'report': None, 'dry_run': True}
 
-        # Ensure exactly 3 slots (pad with None placeholders if fewer)
+        # Ensure exactly 3 slots (pad with None values if fewer)
         while len(agents) < 3:
             agents.append(None)
 

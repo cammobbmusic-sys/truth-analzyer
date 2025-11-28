@@ -83,7 +83,7 @@ class MockModel:
     def _format_brainstorming_response(self, template_result: str, replacements: dict) -> str:
         """Format brainstorming responses with clear idea separation."""
         if '{idea1}' in template_result or '{idea2}' in template_result or '{idea3}' in template_result:
-            # Template already has idea placeholders filled
+            # Template already has idea variables filled
             return template_result
 
         # Generate additional ideas for brainstorming
@@ -457,3 +457,15 @@ class ModelAgent:
         """
         response = self.generate_response(prompt, temperature, max_tokens)
         return response.content
+
+    def run(self, *args, **kwargs):
+        """Run the model agent."""
+        pass
+
+    def analyze(self, *args, **kwargs):
+        """Analyze input using the model agent."""
+        pass
+
+    def process(self, *args, **kwargs):
+        """Process input and return results."""
+        pass

@@ -20,7 +20,8 @@ from evaluation_dashboard import dashboard
 def run_evaluation_suite(models: List[str], genres: Optional[List[str]] = None,
                         tasks_per_genre: int = 5, output_file: Optional[str] = None):
     """Run a comprehensive evaluation suite."""
-    print("🚀 Starting AI Model Evaluation Suite"    print(f"📊 Models: {', '.join(models)}")
+    print("🚀 Starting AI Model Evaluation Suite")
+    print(f"📊 Models: {', '.join(models)}")
     print(f"🎯 Genres: {genres or 'ALL'}")
     print(f"📝 Tasks per genre: {tasks_per_genre}")
     print("-" * 60)
@@ -42,8 +43,8 @@ def run_evaluation_suite(models: List[str], genres: Optional[List[str]] = None,
     end_time = datetime.now()
 
     # Print summary
-    print("
-📊 EVALUATION COMPLETE"    print(f"⏱️  Duration: {(end_time - start_time).total_seconds():.2f} seconds")
+    print("📊 EVALUATION COMPLETE")
+    print(f"⏱️  Duration: {(end_time - start_time).total_seconds():.2f} seconds")
     print(f"📈 Total Evaluations: {results['total_evaluations']}")
 
     # Print results summary
@@ -56,8 +57,8 @@ def run_evaluation_suite(models: List[str], genres: Optional[List[str]] = None,
         if result.get('success', False):
             model_stats[model]['successful'] += 1
 
-    print("
-📋 MODEL PERFORMANCE SUMMARY:"    for model, stats in model_stats.items():
+    print("📋 MODEL PERFORMANCE SUMMARY:")
+    for model, stats in model_stats.items():
         success_rate = (stats['successful'] / stats['total']) * 100
         print(f"  {model}: {stats['successful']}/{stats['total']} ({success_rate:.1f}%)")
 
@@ -107,8 +108,8 @@ def compare_models_cli(model_a: str, model_b: str, genres: Optional[List[str]] =
             winner = comparison['winner']
             genre_wins[winner] += 1
 
-        print("
-🏆 OVERALL RESULTS:"        print(f"  {model_a}: {genre_wins[model_a]} genre wins")
+        print("🏆 OVERALL RESULTS:")
+        print(f"  {model_a}: {genre_wins[model_a]} genre wins")
         print(f"  {model_b}: {genre_wins[model_b]} genre wins")
         print(f"  Ties: {genre_wins['tie']}")
 
@@ -144,8 +145,8 @@ def show_evaluation_report(model: Optional[str] = None, genre: Optional[str] = N
     print(f"🎯 Genres Evaluated: {len(report['genres_evaluated'])}")
 
     if report['performance_summary']:
-        print("
-📋 MODEL PERFORMANCE SUMMARY:"        print(f"{'Model':<15} {'Genres':<8} {'Avg Score':<10} {'Samples':<8}")
+        print("📋 MODEL PERFORMANCE SUMMARY:")
+        print(f"{'Model':<15} {'Genres':<8} {'Avg Score':<10} {'Samples':<8}")
         print("-" * 50)
 
         for model_name, genres in report['performance_summary'].items():
@@ -157,8 +158,8 @@ def show_evaluation_report(model: Optional[str] = None, genre: Optional[str] = N
             print(f"{model_name:<15} {total_genres:<8} {score_indicator} {avg_score:.3f}     {total_samples:<8}")
 
     if report['recommendations']:
-        print("
-💡 RECOMMENDATIONS:"        for rec in report['recommendations']:
+        print("💡 RECOMMENDATIONS:")
+        for rec in report['recommendations']:
             print(f"  • Use {rec['recommended_model']} for {rec['genre']} tasks")
             print(f"    Expected score: {rec['expected_score']:.3f}")
 
@@ -183,14 +184,14 @@ def show_task_library_stats():
     print("-" * 60)
     print(f"{'TOTAL':<20} {total_tasks}")
 
-    print("
-✅ Task library analysis complete!")
+    print("✅ Task library analysis complete!")
 
 
 def start_dashboard(host: str = '0.0.0.0', port: int = 5001):
     """Start the evaluation dashboard."""
-    print("🚀 Starting AI Evaluation Dashboard..."    print(f"📊 Access at: http://{host}:{port}")
-    print("📈 Features: Real-time metrics, comparative analysis, performance tracking"
+    print("🚀 Starting AI Evaluation Dashboard...")
+    print(f"📊 Access at: http://{host}:{port}")
+    print("📈 Features: Real-time metrics, comparative analysis, performance tracking")
     try:
         dashboard.run(host=host, port=port, debug=False)
     except KeyboardInterrupt:

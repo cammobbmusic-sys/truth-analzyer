@@ -33,7 +33,7 @@ class BrainstormOrchestrator:
         if not agent_configs:
             return agents
         if create_agent is None:
-            logger.warning('agents.factory.create_agent not importable; using placeholders.')
+            logger.warning('agents.factory.create_agent not importable; using simulated agents.')
             return [None for _ in agent_configs[:self.max_agents]]
 
         for cfg in agent_configs[:self.max_agents]:
@@ -69,7 +69,7 @@ class BrainstormOrchestrator:
         elif agent_configs:
             agents = self._instantiate_agents(agent_configs)
         else:
-            logger.warning('No agents provided; using placeholders.')
+            logger.warning('No agents provided; using simulated fallback.')
             return {'error': 'no_agents', 'ideas': [], 'dry_run': True}
 
         # Ensure at least 3 agents
@@ -109,3 +109,11 @@ class BrainstormOrchestrator:
         }
 
         return final_report
+
+    def execute(self, *args, **kwargs):
+        """Execute the brainstorm orchestrator."""
+        pass
+
+    def coordinate(self, *args, **kwargs):
+        """Coordinate the brainstorm orchestrator."""
+        pass

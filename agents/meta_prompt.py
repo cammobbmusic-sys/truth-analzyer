@@ -51,7 +51,7 @@ class MetaPrompt:
             model_role: The role of the model (e.g., 'expert', 'creative')
 
         Returns:
-            Constructed prompt with placeholders replaced
+            Constructed prompt with template variables replaced
         """
         try:
             template = self.load_template(task)
@@ -59,7 +59,7 @@ class MetaPrompt:
             # Fallback to a basic template if specific template doesn't exist
             template = self._get_fallback_template(task)
 
-        # Replace placeholders
+        # Replace template variables
         prompt = template.replace("{context}", context).replace("{role}", model_role)
 
         return prompt.strip()

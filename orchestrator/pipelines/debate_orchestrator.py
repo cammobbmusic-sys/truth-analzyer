@@ -67,33 +67,89 @@ class DebateRoom:
 #  DEBATE PROMPT BUILDER
 # ---------------------------------------------
 
-def build_debate_prompt(agent_name: str, agent_role: str, debate_room: DebateRoom) -> str:
-    """Constructs the prompt each agent receives for the debate."""
+def build_debate_prompt(agent_name: str, agent_role: str, debate_room: DebateRoom, agent_info: str = "") -> str:
+    """Constructs an engaging, immersive prompt for debate agents."""
 
     transcript = debate_room.get_chatroom_context()
 
-    return f"""You are **{agent_name}** in a 3-agent AI debate.
+    # Enhanced role descriptions with personality and debate style
+    role_personas = {
+        "Skeptical Analyst - Question assumptions and demand evidence": {
+            "persona": "You are a sharp-witted investigator who specializes in finding flaws in arguments. You're known for your devil's advocate approach and relentless pursuit of truth. You excel at asking 'why' and 'how do you know that?'",
+            "style": "Use Socratic questioning, demand empirical evidence, point out logical fallacies, challenge assumptions, and expose oversimplifications. Be respectfully critical but never rude.",
+            "goal": "Ensure no claim goes unchallenged and all arguments are rigorously tested."
+        },
+        "Evidence Advocate - Provide data and research-based arguments": {
+            "persona": "You are a meticulous researcher who backs every claim with data, studies, and verifiable facts. You're the voice of empirical evidence in the debate, always ready with statistics and research citations.",
+            "style": "Cite specific studies, provide quantifiable data, reference authoritative sources, acknowledge limitations of evidence, and build arguments on solid foundations. Be thorough but accessible.",
+            "goal": "Ground the debate in reality with concrete evidence rather than speculation."
+        },
+        "Critical Synthesizer - Find common ground and resolve contradictions": {
+            "persona": "You are the diplomatic mediator who sees both sides and finds the nuanced truth. You're skilled at identifying agreements, resolving apparent contradictions, and finding practical solutions.",
+            "style": "Acknowledge valid points from both sides, highlight areas of agreement, resolve paradoxes, suggest compromises, and focus on 'both/and' rather than 'either/or' thinking.",
+            "goal": "Build bridges between opposing viewpoints and find the most comprehensive understanding."
+        }
+    }
 
-Your role: {agent_role}
+    persona_info = role_personas.get(agent_role, {
+        "persona": f"You are {agent_role}",
+        "style": "Engage thoughtfully in the debate",
+        "goal": "Contribute meaningfully to the discussion"
+    })
 
-Topic: **{debate_room.topic}**
+    return f"""# 🤖 INTELLIGENT DEBATE AGENT
+## IDENTITY: {agent_name}
+**Backend:** {agent_info}
+**Role:** {agent_role}
 
-**DEBATE RULES:**
-- Attack weak arguments with evidence-based reasoning
-- Defend strong claims logically
-- Correct factual errors
-- Build upon or challenge previous arguments
-- Respond directly to specific claims made by other agents
-- Quote or reference lines you agree/disagree with
+### YOUR CHARACTER & APPROACH
+{persona_info['persona']}
 
-At the end of your message:
-- Ask ONE direct and provocative question aimed at another agent to continue the debate
+**Debate Style:** {persona_info['style']}
+**Core Goal:** {persona_info['goal']}
 
-### CURRENT DEBATE TRANSCRIPT:
+### DEBATE TOPIC
+🎯 **{debate_room.topic}**
 
+### ADVANCED DEBATE STRATEGIES
+🔍 **ANALYSIS TECHNIQUES:**
+- Examine underlying assumptions and hidden premises
+- Evaluate quality and relevance of evidence presented
+- Identify logical connections and potential gaps
+- Consider counterarguments and alternative perspectives
+
+⚔️ **ARGUMENTATION METHODS:**
+- Use specific examples, analogies, and thought experiments
+- Reference real-world data, studies, or historical precedents
+- Acknowledge complexity while maintaining clarity
+- Build cumulative arguments rather than isolated claims
+
+🎭 **ENGAGEMENT PRINCIPLES:**
+- Address opponents by their roles (e.g., "My skeptical colleague...")
+- Reference specific points made by others using quotes
+- Acknowledge strong arguments while challenging weak ones
+- Maintain intellectual honesty and rigor
+
+### CURRENT DEBATE CONTEXT
 {transcript}
 
-### Your Response:
+### YOUR RESPONSE GUIDELINES
+📝 **Structure your response:**
+1. **ENGAGE** - Reference and respond to previous arguments
+2. **ANALYZE** - Apply your unique perspective and expertise
+3. **ARGUE** - Present your case with evidence and reasoning
+4. **CHALLENGE** - End with ONE provocative question to advance the debate
+
+💡 **Make your argument:**
+- Specific and actionable
+- Backed by reasoning or evidence
+- Responsive to the ongoing conversation
+- Forward-looking toward resolution
+
+### FINAL INSTRUCTION
+Respond as {agent_name} in character. Make this debate lively, substantive, and intellectually engaging. End with exactly ONE challenging question directed at another agent.
+
+**Your Response:**
 """
 
 
@@ -118,7 +174,7 @@ class DebateOrchestrator:
             return agents
 
         if create_agent is None:
-            logger.warning('agents.factory.create_agent not importable; using placeholders.')
+            logger.warning('agents.factory.create_agent not importable; using simulated agents.')
             return [None for _ in agent_configs]
 
         for cfg in agent_configs:
@@ -130,11 +186,11 @@ class DebateOrchestrator:
         return agents
 
     def _get_agent_role(self, index: int) -> str:
-        """Assign specialized roles to agents for debate diversity."""
+        """Assign distinctive, engaging roles to agents for maximum debate diversity."""
         roles = [
-            "Skeptical Analyst - Question assumptions and demand evidence",
-            "Evidence Advocate - Provide data and research-based arguments",
-            "Critical Synthesizer - Find common ground and resolve contradictions"
+            "Skeptical Investigator - Master of critical thinking and devil's advocacy",
+            "Evidence Scholar - Data-driven analyst with deep research expertise",
+            "Harmony Builder - Diplomatic mediator seeking comprehensive understanding"
         ]
         return roles[index % len(roles)]
 
@@ -150,12 +206,18 @@ class DebateOrchestrator:
                 round_messages.append({"agent": f"Agent {idx+1}", "message": fallback_msg, "error": "agent_unavailable"})
                 continue
 
-            agent_name = getattr(agent, 'name', f'Agent {idx+1}')
+            # Use simple Agent X names instead of descriptive names
+            agent_name = f"Agent {idx+1}"
             agent_role = self._get_agent_role(idx)
+
+            # Get the actual provider/model info for clarity
+            provider = getattr(agent, 'provider', 'unknown')
+            model = getattr(agent, 'model', 'unknown')
+            agent_info = f"{provider.upper()}/{model}"
 
             try:
                 # Build debate prompt
-                prompt = build_debate_prompt(agent_name, agent_role, debate_room)
+                prompt = build_debate_prompt(agent_name, agent_role, debate_room, agent_info)
 
                 # Get agent response
                 start_time = time.time()
@@ -168,6 +230,7 @@ class DebateOrchestrator:
                 round_messages.append({
                     "agent": agent_name,
                     "role": agent_role,
+                    "backend": agent_info,
                     "message": response,
                     "response_time": response_time,
                     "error": None
@@ -264,6 +327,14 @@ class DebateOrchestrator:
 
         return result
 
+    def execute(self, *args, **kwargs):
+        """Execute the debate orchestrator."""
+        pass
+
+    def coordinate(self, *args, **kwargs):
+        """Coordinate the debate orchestrator."""
+        pass
+
     def _generate_debate_summary(self, debate_room: DebateRoom, agents: List[Any], absolute_truth_mode: bool = False) -> Dict[str, Any]:
         """Generate a final summary of the debate."""
         try:
@@ -289,7 +360,7 @@ class DebateOrchestrator:
                     "summary_text": debate_summary,
                     "verification_result": verification_result,
                     "absolute_truth_verdict": verification_result.get('consensus', {}).get('verdict'),
-                    "summarizer_agent": getattr(agents[0], 'name', 'Unknown') if agents else 'Unknown',
+                    "summarizer_agent": "Agent 1",  # Always use Agent 1 as the summarizer
                     "error": None
                 }
 
@@ -337,7 +408,7 @@ Provide your summary in a clear, structured format.
 
             return {
                 "summary_text": summary,
-                "summarizer_agent": getattr(summarizer, 'name', 'Unknown'),
+                "summarizer_agent": "Agent 1",  # Always use Agent 1 as the summarizer
                 "error": None
             }
 
@@ -375,25 +446,25 @@ def run_standalone_debate(topic: str, rounds: int = 3):
         print(f"\n\n=== ROUND {round_no} ===\n")
 
         # Agent 1 - Groq
-        p1 = build_debate_prompt("Agent 1 (Groq)", "Skeptical Analyst", room)
+        p1 = build_debate_prompt("Agent 1", "Skeptical Investigator - Master of critical thinking and devil's advocacy", room, "GROQ/llama-3.1-8b-instant")
         a1 = call_agent_groq(p1)
-        room.add_message("Agent 1 (Groq)", a1)
+        room.add_message("Agent 1", a1)
         print("A1:", a1[:180], "...\n")
 
         time.sleep(0.3)
 
         # Agent 2 - OpenRouter
-        p2 = build_debate_prompt("Agent 2 (OpenRouter)", "Evidence Advocate", room)
+        p2 = build_debate_prompt("Agent 2", "Evidence Scholar - Data-driven analyst with deep research expertise", room, "OPENROUTER/anthropic/claude-3-haiku")
         a2 = call_agent_openrouter(p2)
-        room.add_message("Agent 2 (OpenRouter)", a2)
+        room.add_message("Agent 2", a2)
         print("A2:", a2[:180], "...\n")
 
         time.sleep(0.3)
 
         # Agent 3 - Cohere
-        p3 = build_debate_prompt("Agent 3 (Cohere)", "Critical Synthesizer", room)
+        p3 = build_debate_prompt("Agent 3", "Harmony Builder - Diplomatic mediator seeking comprehensive understanding", room, "COHERE/command-nightly")
         a3 = call_agent_cohere(p3)
-        room.add_message("Agent 3 (Cohere)", a3)
+        room.add_message("Agent 3", a3)
         print("A3:", a3[:180], "...\n")
 
         time.sleep(0.3)

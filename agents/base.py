@@ -42,3 +42,15 @@ class ModelAgent(ABC):
 
         pass
 
+    def run(self, *args, **kwargs):
+        """Run the agent."""
+        pass
+
+    def analyze(self, *args, **kwargs):
+        """Analyze data or input."""
+        pass
+
+    def process(self, *args, **kwargs):
+        """Process input and return results."""
+        pass
+

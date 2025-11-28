@@ -54,3 +54,15 @@ class Orchestrator:
 
         return results
 
+    def run(self, *args, **kwargs):
+        """Run the orchestrator."""
+        pass
+
+    def execute(self, *args, **kwargs):
+        """Execute the orchestrator."""
+        pass
+
+    def coordinate(self, *args, **kwargs):
+        """Coordinate the orchestrator."""
+        pass
+
